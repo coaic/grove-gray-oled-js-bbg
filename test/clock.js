@@ -1,7 +1,6 @@
 var 
-    res = require("./res"),
-    oled = require("../oled"),
-    OLED = oled.OLED;
+    // res = require("./res"),
+    OLED = require("../oled");
 
 Date.prototype.format = function(fmt) { //author: meizz 
     var o = {
@@ -22,15 +21,9 @@ Date.prototype.format = function(fmt) { //author: meizz
 
 // wiringPiSetup();
 var screen = new OLED({
-    clk: 14,
-    dat: 12,
-    rst: 13,
-    dc: 6,
-    cs: 10
-    }, {
     width: 128,
     height: 64,
-    canvas: res.splash,
+    // canvas: res.splash,
     fps: 0
     }),
     ct = screen.getContext("2d");

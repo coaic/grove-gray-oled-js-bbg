@@ -1,31 +1,40 @@
-var i2c = require('i2c');
+var i2c = require('i2c-bus'),
+    async = require('async');
 
 var Oled = function(opts) {
 
-  this.HEIGHT = opts.height || 32;
+  this.HEIGHT = opts.height || 64;
   this.WIDTH = opts.width || 128;
   this.ADDRESS = opts.address || 0x3C;
   this.PROTOCOL = 'I2C';
+  
+  this.BUS0 = 0,
+  this.BUS1 = 1,
+  this.BUS2 = 2,
 
-  // create command buffers
+  this.i2c1,
+
+  // create command
+  this.SETCOMMANDLOCK = 0xFD;
+  this.RESETPROTECTION = 0x12;
   this.DISPLAY_OFF = 0xAE;
   this.DISPLAY_ON = 0xAF;
   this.SET_DISPLAY_CLOCK_DIV = 0xD5;
   this.SET_MULTIPLEX = 0xA8;
-  this.SET_DISPLAY_OFFSET = 0xD3;
+  this.SET_DISPLAY_OFFSET = 0xA3;
   this.SET_START_LINE = 0x00;
   this.CHARGE_PUMP = 0x8D;
   this.EXTERNAL_VCC = false;
   this.MEMORY_MODE = 0x20;
-  this.SEG_REMAP = 0xA1; // using 0xA0 will flip screen
+  this.SEG_REMAP = 0xA0; 
   this.COM_SCAN_DEC = 0xC8;
   this.COM_SCAN_INC = 0xC0;
   this.SET_COM_PINS = 0xDA;
   this.SET_CONTRAST = 0x81;
   this.SET_PRECHARGE = 0xd9;
   this.SET_VCOM_DETECT = 0xDB;
-  this.DISPLAY_ALL_ON_RESUME = 0xA4;
-  this.NORMAL_DISPLAY = 0xA6;
+  // this.DISPLAY_ALL_ON_RESUME = 0xA4;
+  this.NORMAL_DISPLAY = 0xA4;
   this.COLUMN_ADDR = 0x21;
   this.PAGE_ADDR = 0x22;
   this.INVERT_DISPLAY = 0xA7;
@@ -53,12 +62,12 @@ var Oled = function(opts) {
       'coloffset': 0
     },
     '128x64': {
-      'multiplex': 0x3F,
+      'multiplex': 0xA8,
       'compins': 0x12,
       'coloffset': 0
     },
     '96x16': {
-      'multiplex': 0x0F,
+      'multiplex': 0xA8,
       'compins': 0x2,
       'coloffset': 0,
     }
@@ -66,42 +75,189 @@ var Oled = function(opts) {
 
   // Setup i2c
   console.log('this.ADDRESS: ' + this.ADDRESS);
-  this.wire = new i2c(this.ADDRESS, {device: '/dev/i2c-0'}); // point to your i2c address, debug provides REPL interface
+  // this.wire = new i2c(this.ADDRESS, {device: '/dev/i2c-0'}); // point to your i2c address, debug provides REPL interface
 
   var screenSize = this.WIDTH + 'x' + this.HEIGHT;
   this.screenConfig = config[screenSize];
 
-  this._initialise();
+  // this._initialise();
 }
 
-Oled.prototype._initialise = function() {
+Oled.prototype.init = function (cb) {
+  this._initialise(cb);
+}
+
+Oled.prototype._sendCommand = function () {
+    var cmd,
+        data = [],
+        callback;
+    if (3 == arguments.length) {
+        cmd = arguments[0];
+        data = arguments[1];
+        callback = arguments[2];
+    } else if (2 == arguments.length) {
+        cmd = arguments[0];
+        callback = arguments[1];
+    } else {
+        throw "I2C incorrect number of  argumnents to sendCommand";
+    }
+
+    if (3 == arguments.length && 1 == data.length) {
+        this.i2c1.writeByte(OledAddress, cmd, data[0], function(err, bytesWritten, buffer) {
+            if (err) {
+                console.log("I2C Error sending command: " + cmd + ", data: " + data[0] + ", error: " + err);
+                callback(err);
+            } else {
+                callback();
+            }
+        });
+    } else if (3 == arguments.length && data.length > 1) {
+        this.i2c1.writeI2cBlock(OledAddress, cmd, data.length, data, function(err, bytesWritten, buffer) {
+            if (err) {
+                console.log("I2C Error sending command and data: " + cmd + ", data: " + data + ", error: " + err);
+                callback(err);
+            } else {
+                callback();
+            }
+        });
+    } else if (2 == arguments.length) {
+        this.i2c1.sendByte(OledAddress, cmd, function(err, bytesWritten, buffer) {
+            if (err) {
+                console.log("I2C Error sending command: " + cmd + ", error: " + err);
+                callback(err);
+            } else {
+                callback();
+            }
+        });
+    }
+}
+
+Oled.prototype.setDisplayModeNormal = function (cb) {
+    this._sendCommand(this.NORMAL_DISPLAY, cb);
+}
+
+Oled.prototype.setDisplayModeAllOn = function (cb) {
+    this._sendCommand(0xA5, cb);
+}
+
+Oled.prototype.setDisplayModeAllOff = function (cb) {
+    this._sendCommand(0xA6, cb);
+}
+
+Oled.prototype.setDisplayModeInverse = function (cb) {
+    this._sendCommand(this.INVERT_DISPLAY, cb);
+}
+
+Oled.prototype.setEnableScroll = function (on, cb) {
+    if (on)
+        this._sendCommand(this.ACTIVATE_SCROLL, cb);
+    else
+        this._sendCommand(this.DEACTIVATE_SCROLL, cb);
+}
+
+Oled.prototype.setEnableDisplay = function (on, cb) {
+    if (on) 
+        sendCommand(this.DISPLAY_ON, cb);
+    else
+        sendCommand(this.DISPLAY_OFF, cb);    
+}
+
+Oled.prototype._initialise = function(callback) {
 
   // sequence of bytes to initialise with
-  var initSeq = [
-    this.DISPLAY_OFF,
-    this.SET_DISPLAY_CLOCK_DIV, 0x80,
-    this.SET_MULTIPLEX, this.screenConfig.multiplex, // set the last value dynamically based on screen size requirement
-    this.SET_DISPLAY_OFFSET, 0x00, // sets offset pro to 0
-    this.SET_START_LINE,
-    this.CHARGE_PUMP, 0x14, // charge pump val
-    this.MEMORY_MODE, 0x00, // 0x0 act like ks0108
-    this.SEG_REMAP, // screen orientation
-    this.COM_SCAN_DEC, // screen orientation change to INC to flip
-    this.SET_COM_PINS, this.screenConfig.compins, // com pins val sets dynamically to match each screen size requirement
-    this.SET_CONTRAST, 0x8F, // contrast val
-    this.SET_PRECHARGE, 0xF1, // precharge val
-    this.SET_VCOM_DETECT, 0x40, // vcom detect
-    this.DISPLAY_ALL_ON_RESUME,
-    this.NORMAL_DISPLAY,
-    this.DISPLAY_ON
-  ];
+  // var initSeq = [
+  //   this.DISPLAY_OFF,
+  //   this.SET_DISPLAY_CLOCK_DIV, 0x80,
+  //   this.SET_MULTIPLEX, this.screenConfig.multiplex, // set the last value dynamically based on screen size requirement
+  //   this.SET_DISPLAY_OFFSET, 0x00, // sets offset pro to 0
+  //   this.SET_START_LINE,
+  //   this.CHARGE_PUMP, 0x14, // charge pump val
+  //   this.MEMORY_MODE, 0x00, // 0x0 act like ks0108
+  //   this.SEG_REMAP, // screen orientation
+  //   this.COM_SCAN_DEC, // screen orientation change to INC to flip
+  //   this.SET_COM_PINS, this.screenConfig.compins, // com pins val sets dynamically to match each screen size requirement
+  //   this.SET_CONTRAST, 0x8F, // contrast val
+  //   this.SET_PRECHARGE, 0xF1, // precharge val
+  //   this.SET_VCOM_DETECT, 0x40, // vcom detect
+  //   this.DISPLAY_ALL_ON_RESUME,
+  //   this.NORMAL_DISPLAY,
+  //   this.DISPLAY_ON
+  // ];
 
-  var i, initSeqLen = initSeq.length;
+  // var i, initSeqLen = initSeq.length;
 
-  // write init seq commands
-  for (i = 0; i < initSeqLen; i ++) {
-    this._transfer('cmd', initSeq[i]);
-  }
+  // // write init seq commands
+  // for (i = 0; i < initSeqLen; i ++) {
+  //   this._transfer('cmd', initSeq[i]);
+  // }
+      async.series([
+        function(cb) {
+            this.i2c1 = i2c.open(this.BUS1, cb);
+        },
+        function(cb) {
+            this.sendCommand(this.SETCOMMANDLOCK, cb);                        // Unlock OLED driver IC MCU interface from entering command. i.e: Accept commands
+        },
+        function(cb) {
+            this.sendCommand(this.RESETPROTECTION, cb);
+        },
+        function(cb) {
+            this.setEnableDisplay(false, cb);
+        },
+        function(cb) {
+            this.sendCommand(this.SETMULTIPLEX, [ this.screenConfig[this.screenSize]['multiplex'] ], cb);         // set multiplex ratio
+        },
+        function(cb) {
+            this.sendCommand(this.SET_START_LINE, [ 0x00 ], cb);                  // set display start line
+        },
+        function(cb) {
+            this.sendCommand(this.SET_DISPLAY_OFFSET, [ 0x60 ], cb);              // set display offset
+        },
+        function(cb) {
+            this.sendCommand(this.SEG_REMAP, [ 0x46 ], cb);                      // set remap
+        },
+        function(cb) {
+            this.sendCommand(this.SETVDDINTERNAL, [ 0x01 ], cb);                // set vdd internal
+        },
+        function(cb) {
+            this.sendCommand(this.SETCONTRAST, [ 0x53 ], cb);                   // set contrast
+        },
+        function(cb) {
+            this.sendCommand(this.SETPHASELENGTH, [ 0x51 ], cb);                // set phase length
+        },
+        function(cb) {
+            this.sendCommand(this.SETDISPLAYCLOCKDIVIDERATIO, [ 0x01 ], cb);    // set display clock divide ratio/oscillator frequency
+        },
+        function(cb) {
+            this.sendCommand(this.SETLINEARLUT, cb);                          // set linear gray scale
+        },
+        function(cb) {
+            this.sendCommand(this.SETPRECHARGEVOLTAGE, [ this.VCOMH ], cb);          // set pre charge voltage to VCOMH
+        },
+        function(cb) {
+            this.sendCommand(this.SETVCOMH, [ this.POINT86VCC ], cb);                // set VCOMh .86 x Vcc
+        },
+        function(cb) {
+            this.sendCommand(this.SETSECONDPRECHARGE, [ 0x01 ], cb);            // set second pre charge period
+        },
+        function(cb) {
+            this.sendCommand(this.SETENABLESECONDPRECHARGE, [ this.INTERNALVSL ], cb); // enable second pre charge and internal VSL
+        },
+    
+        function(cb) {
+            this.setDisplayModeNormal(cb);
+        },
+        function(cb) {
+            this.setEnableScroll(false, cb);
+        },
+        function(cb) {
+            this.setEnableDisplay(true, cb);
+        }
+    ], function(err, results) {
+        if (err)
+            callback(err, results);
+        else
+            callback();
+    });
 }
 
 // writes both commands and data buffers to this device
