@@ -25,8 +25,9 @@ var screen = new OLED({
     height: 64,
     // canvas: res.splash,
     fps: 0
-    }),
-    ct = screen.getContext("2d");
+    });
+    // }),
+    // ct = screen.getContext("2d");
 
 
 // setInterval(function() {
@@ -48,11 +49,13 @@ var screen = new OLED({
 screen.init(function(){
     setInterval(function() {
     	var now = new Date;
-        ct.clear();
-    	ct.font = "Courier 16pt",
-        ct.fillText(now.format("yyyy-MM-dd"), 0, 40);
-    	ct.font = "04b03b 24pt",
-        ct.fillText(now.format("hh:mm:ss"), 0, 64, 128);
+    //     ct.clear();
+    // 	ct.font = "Courier 16pt",
+    //     ct.fillText(now.format("yyyy-MM-dd"), 0, 40);
+    // 	ct.font = "04b03b 24pt",
+    //     ct.fillText(now.format("hh:mm:ss"), 0, 64, 128);
+        screen.clearDisplay();
+        screen.writeString("Courier 16pt", 16, now.format("yyyy-MM-dd"), true, true)
         screen.display();
     }, 1000);
     

@@ -23,6 +23,12 @@ var Oled = function(opts) {
   this.SET_MULTIPLEX = 0xA8;
   this.SET_DISPLAY_OFFSET = 0xA3;
   this.SET_START_LINE = 0x00;
+  this.VCOMH = 0x08;
+  this.SET_VCOMH = 0xBE;
+  this.SET_SECOND_PRECHARGE = 0xB6;
+  this.SET_ENABLE_SECOND_PRECHARGE = 0xD5;
+  this.INTERNAL_VSL = 0x62;
+  this.POINT_86_VCC = 0x07;
   this.CHARGE_PUMP = 0x8D;
   this.EXTERNAL_VCC = false;
   this.MEMORY_MODE = 0x20;
@@ -31,11 +37,15 @@ var Oled = function(opts) {
   this.COM_SCAN_INC = 0xC0;
   this.SET_COM_PINS = 0xDA;
   this.SET_CONTRAST = 0x81;
-  this.SET_PRECHARGE = 0xd9;
+  this.SET_PRECHARGE_VOLTAGE = 0xBC;
   this.SET_VCOM_DETECT = 0xDB;
+  this.SET_VDD_INTERNAL = 0xAB;
+  this.SET_PHASE_LENGTH = 0xB1;
+  this.SET_DISPLAY_CLOCK_DIVIDE_RATIO = 0xB3;
+  this.SET_LINEAR_LUT = 0xB9;
   // this.DISPLAY_ALL_ON_RESUME = 0xA4;
   this.NORMAL_DISPLAY = 0xA4;
-  this.COLUMN_ADDR = 0x21;
+  this.COLUMN_ADDR = 0x15;
   this.PAGE_ADDR = 0x22;
   this.INVERT_DISPLAY = 0xA7;
   this.ACTIVATE_SCROLL = 0x2F;
@@ -103,7 +113,7 @@ Oled.prototype._sendCommand = function () {
     }
 
     if (3 == arguments.length && 1 == data.length) {
-        this.i2c1.writeByte(OledAddress, cmd, data[0], function(err, bytesWritten, buffer) {
+        this.i2c1.writeByte(this.ADDRESS, cmd, data[0], function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", data: " + data[0] + ", error: " + err);
                 callback(err);
@@ -112,7 +122,7 @@ Oled.prototype._sendCommand = function () {
             }
         });
     } else if (3 == arguments.length && data.length > 1) {
-        this.i2c1.writeI2cBlock(OledAddress, cmd, data.length, data, function(err, bytesWritten, buffer) {
+        this.i2c1.writeI2cBlock(this.ADDRESS, cmd, data.length, data, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command and data: " + cmd + ", data: " + data + ", error: " + err);
                 callback(err);
@@ -121,7 +131,7 @@ Oled.prototype._sendCommand = function () {
             }
         });
     } else if (2 == arguments.length) {
-        this.i2c1.sendByte(OledAddress, cmd, function(err, bytesWritten, buffer) {
+        this.i2c1.sendByte(this.ADDRESS, cmd, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", error: " + err);
                 callback(err);
@@ -157,9 +167,9 @@ Oled.prototype.setEnableScroll = function (on, cb) {
 
 Oled.prototype.setEnableDisplay = function (on, cb) {
     if (on) 
-        sendCommand(this.DISPLAY_ON, cb);
+        this._sendCommand(this.DISPLAY_ON, cb);
     else
-        sendCommand(this.DISPLAY_OFF, cb);    
+        this._sendCommand(this.DISPLAY_OFF, cb);    
 }
 
 Oled.prototype._initialise = function(callback) {
@@ -190,126 +200,141 @@ Oled.prototype._initialise = function(callback) {
   // for (i = 0; i < initSeqLen; i ++) {
   //   this._transfer('cmd', initSeq[i]);
   // }
-      async.series([
-        function(cb) {
-            this.i2c1 = i2c.open(this.BUS1, cb);
-        },
-        function(cb) {
-            this.sendCommand(this.SETCOMMANDLOCK, cb);                        // Unlock OLED driver IC MCU interface from entering command. i.e: Accept commands
-        },
-        function(cb) {
-            this.sendCommand(this.RESETPROTECTION, cb);
-        },
-        function(cb) {
-            this.setEnableDisplay(false, cb);
-        },
-        function(cb) {
-            this.sendCommand(this.SETMULTIPLEX, [ this.screenConfig[this.screenSize]['multiplex'] ], cb);         // set multiplex ratio
-        },
-        function(cb) {
-            this.sendCommand(this.SET_START_LINE, [ 0x00 ], cb);                  // set display start line
-        },
-        function(cb) {
-            this.sendCommand(this.SET_DISPLAY_OFFSET, [ 0x60 ], cb);              // set display offset
-        },
-        function(cb) {
-            this.sendCommand(this.SEG_REMAP, [ 0x46 ], cb);                      // set remap
-        },
-        function(cb) {
-            this.sendCommand(this.SETVDDINTERNAL, [ 0x01 ], cb);                // set vdd internal
-        },
-        function(cb) {
-            this.sendCommand(this.SETCONTRAST, [ 0x53 ], cb);                   // set contrast
-        },
-        function(cb) {
-            this.sendCommand(this.SETPHASELENGTH, [ 0x51 ], cb);                // set phase length
-        },
-        function(cb) {
-            this.sendCommand(this.SETDISPLAYCLOCKDIVIDERATIO, [ 0x01 ], cb);    // set display clock divide ratio/oscillator frequency
-        },
-        function(cb) {
-            this.sendCommand(this.SETLINEARLUT, cb);                          // set linear gray scale
-        },
-        function(cb) {
-            this.sendCommand(this.SETPRECHARGEVOLTAGE, [ this.VCOMH ], cb);          // set pre charge voltage to VCOMH
-        },
-        function(cb) {
-            this.sendCommand(this.SETVCOMH, [ this.POINT86VCC ], cb);                // set VCOMh .86 x Vcc
-        },
-        function(cb) {
-            this.sendCommand(this.SETSECONDPRECHARGE, [ 0x01 ], cb);            // set second pre charge period
-        },
-        function(cb) {
-            this.sendCommand(this.SETENABLESECONDPRECHARGE, [ this.INTERNALVSL ], cb); // enable second pre charge and internal VSL
-        },
-    
-        function(cb) {
-            this.setDisplayModeNormal(cb);
-        },
-        function(cb) {
-            this.setEnableScroll(false, cb);
-        },
-        function(cb) {
-            this.setEnableDisplay(true, cb);
-        }
-    ], function(err, results) {
-        if (err)
-            callback(err, results);
-        else
-            callback();
-    });
-}
-
-// writes both commands and data buffers to this device
-Oled.prototype._transfer = function(type, val, fn) {
-  var control;
-  if (type === 'data') {
-    control = 0x40;
-  } else if (type === 'cmd') {
-    control = 0x00;
-  } else {
-    return;
-  }
-
-  // send control and actual val
-  // this.board.io.i2cWrite(this.ADDRESS, [control, val]);
-  this.wire.writeByte(control, function(err) {
-    this.wire.writeByte(val, function(err) {
-      fn();
-    });
-  });
-}
-
-// read a byte from the oled
-Oled.prototype._readI2C = function(fn) {
-  this.wire.readByte(function(err, data) {
-    // result is single byte
-    fn(data);
-  });
-}
-
-// sometimes the oled gets a bit busy with lots of bytes.
-// Read the response byte to see if this is the case
-Oled.prototype._waitUntilReady = function(callback) {
-  var done,
-      oled = this;
-
-  function tick(callback) {
-    oled._readI2C(function(byte) {
-      // read the busy byte in the response
-      busy = byte >> 7 & 1;
-      if (!busy) {
-        // if not busy, it's ready for callback
-        callback();
-      } else {
-        console.log('I\'m busy!');
-        setTimeout(tick, 0);
+  var me = this;
+    async.series([
+      function(cb) {
+          me.i2c1 = i2c.open(me.BUS1, cb);
+      },
+      function(cb) {
+          me._sendCommand(me.SETCOMMANDLOCK, cb);                        // Unlock OLED driver IC MCU interface from entering command. i.e: Accept commands
+      },
+      function(cb) {
+          me._sendCommand(me.RESETPROTECTION, cb);
+      },
+      function(cb) {
+          me.setEnableDisplay(false, cb);
+      },
+      function(cb) {
+          me._sendCommand(me.SET_MULTIPLEX, [ me.screenConfig['multiplex'] ], cb);         // set multiplex ratio
+      },
+      function(cb) {
+          me._sendCommand(me.SET_START_LINE, [ 0x00 ], cb);                  // set display start line
+      },
+      function(cb) {
+          me._sendCommand(me.SET_DISPLAY_OFFSET, [ 0x60 ], cb);              // set display offset
+      },
+      function(cb) {
+          me._sendCommand(me.SEG_REMAP, [ 0x46 ], cb);                      // set remap
+      },
+      function(cb) {
+          me._sendCommand(me.SET_VDD_INTERNAL, [ 0x01 ], cb);                // set vdd internal
+      },
+      function(cb) {
+          me._sendCommand(me.SET_CONTRAST, [ 0x53 ], cb);                   // set contrast
+      },
+      function(cb) {
+          me._sendCommand(me.SET_PHASE_LENGTH, [ 0x51 ], cb);                // set phase length
+      },
+      function(cb) {
+          me._sendCommand(me.SET_DISPLAY_CLOCK_DIVIDE_RATIO, [ 0x01 ], cb);    // set display clock divide ratio/oscillator frequency
+      },
+      function(cb) {
+          me._sendCommand(me.SET_LINEAR_LUT, cb);                          // set linear gray scale
+      },
+      function(cb) {
+          me._sendCommand(me.SET_PRECHARGE_VOLTAGE, [ me.VCOMH ], cb);          // set pre charge voltage to VCOMH
+      },
+      function(cb) {
+          me._sendCommand(me.SET_VCOMH, [ me.POINT_86_VCC ], cb);                // set VCOMh .86 x Vcc
+      },
+      function(cb) {
+          me._sendCommand(me.SET_SECOND_PRECHARGE, [ 0x01 ], cb);            // set second pre charge period
+      },
+      function(cb) {
+          me._sendCommand(me.SET_ENABLE_SECOND_PRECHARGE, [ me.INTERNAL_VSL ], cb); // enable second pre charge and internal VSL
+      },
+  
+      function(cb) {
+          me.setDisplayModeNormal(cb);
+      },
+      function(cb) {
+          me.setEnableScroll(false, cb);
+      },
+      function(cb) {
+          me.setEnableDisplay(true, cb);
       }
-    });
-  };
-
-  setTimeout(tick(callback), 0);
+  ], function(err, results) {
+      if (err)
+          callback(err, results);
+      else
+          callback();
+  });
 }
+
+// // writes both commands and data buffers to this device
+// Oled.prototype._transfer = function(type, val, fn) {
+//   var control;
+//   if (type === 'data') {
+//     control = 0x40;
+//   } else if (type === 'cmd') {
+//     control = 0x00;
+//   } else {
+//     return;
+//   }
+
+//   // send control and actual val
+//   // this.board.io.i2cWrite(this.ADDRESS, [control, val]);
+//   this.wire.writeByte(control, function(err) {
+//     this.wire.writeByte(val, function(err) {
+//       fn();
+//     });
+//   });
+// }
+
+// // read a byte from the oled
+// Oled.prototype._readI2C = function(fn) {
+//   this.wire.readByte(function(err, data) {
+//     // result is single byte
+//     fn(data);
+//   });
+// }
+
+// // sometimes the oled gets a bit busy with lots of bytes.
+// // Read the response byte to see if this is the case
+// Oled.prototype._waitUntilReady = function(callback) {
+//   var done,
+//       oled = this;
+
+//   function tick(callback) {
+//     oled._readI2C(function(byte) {
+//       // read the busy byte in the response
+//       busy = byte >> 7 & 1;
+//       if (!busy) {
+//         // if not busy, it's ready for callback
+//         callback();
+//       } else {
+//         console.log('I\'m busy!');
+//         setTimeout(tick, 0);
+//       }
+//     });
+//   };
+
+//   setTimeout(tick(callback), 0);
+// }
+
+// Oled.prototype._waitCallbackComplete = function(tasks, callback) {
+//   var done,
+//       busy = true,
+//       oled = this;
+      
+//   function tick(callback) {
+//     tasks
+//     if (!busy) {
+      
+//     } else {
+//       console.log("....Waiting for callback");
+//     }
+// }
 
 // set starting position of a text string on the oled
 Oled.prototype.setCursor = function(x, y) {
@@ -428,31 +453,70 @@ Oled.prototype._findCharBuf = function(font, c) {
 
 // send the entire framebuffer to the oled
 Oled.prototype.update = function() {
-  // wait for oled to be ready
-  this._waitUntilReady(function() {
-    // set the start and endbyte locations for oled display update
-    var displaySeq = [
-      this.COLUMN_ADDR,
-      this.screenConfig.coloffset,
-      this.screenConfig.coloffset + this.WIDTH - 1, // column start and end address
-      this.PAGE_ADDR, 0, (this.HEIGHT / 8) - 1 // page start and end address
-    ];
+  // // wait for oled to be ready
+  // this._waitUntilReady(function() {
+  //   // set the start and endbyte locations for oled display update
+  //   var displaySeq = [
+  //     this.COLUMN_ADDR,
+  //     this.screenConfig.coloffset,
+  //     this.screenConfig.coloffset + this.WIDTH - 1, // column start and end address
+  //     this.PAGE_ADDR, 0, (this.HEIGHT / 8) - 1 // page start and end address
+  //   ];
 
-    var displaySeqLen = displaySeq.length,
-        bufferLen = this.buffer.length,
-        i, v;
+  //   var displaySeqLen = displaySeq.length,
+  //       bufferLen = this.buffer.length,
+  //       i, v;
 
-    // send intro seq
-    for (i = 0; i < displaySeqLen; i += 1) {
-      this._transfer('cmd', displaySeq[i]);
-    }
+  //   // send intro seq
+  //   for (i = 0; i < displaySeqLen; i += 1) {
+  //     this._transfer('cmd', displaySeq[i]);
+  //   }
 
-    // write buffer data
-    for (v = 0; v < bufferLen; v += 1) {
-      this._transfer('data', this.buffer[v]);
-    }
+  //   // write buffer data
+  //   for (v = 0; v < bufferLen; v += 1) {
+  //     this._transfer('data', this.buffer[v]);
+  //   }
 
+  // }.bind(this));
+  this._waitCallbackComplete(function() {
+    
+    var me = this;
+    async.series([
+        function(cb) {
+          me._sendCommand(this.COLUMN_ADDR, [ me.screenConfig.coloffset, me.screenConfig.coloffset + me.WIDTH - 1 ], cb);
+        },
+        function(cb) {
+          me._sendData(me.buffer, me.bufferLen, cb)
+        }
+      ], function(err, results) {
+        if (err)
+            callback(err, results);
+        else
+            callback();
+    });
   }.bind(this));
+  
+}
+
+Oled.prototype._testCallbackComplete = function(fn) {
+  return fn(false);
+}
+
+Oled.prototype._waitCallbackComplete = function(callback) {
+  var done,
+      oled = this;
+      
+  function tick(callback) {
+    oled._testCallbackComplete(function(flag) {
+      if (flag) {
+        callback();
+      } else {
+        console.log("...waiting complete callback");
+        setTimeout(tick, 0);
+      }
+    });
+  }
+  setTimeout(tick(callback), 0);
 }
 
 // send dim display command to oled
@@ -571,6 +635,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray) {
   var blen = byteArray.length, i,
       displaySeq = [];
 
+  this.update()
   // check to see if this will even save time
   if (blen > (this.buffer.length / 7)) {
     // just call regular update at this stage, saves on bytes sent
