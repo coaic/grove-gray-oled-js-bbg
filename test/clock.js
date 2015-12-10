@@ -47,14 +47,18 @@ var screen = new OLED({
 // }, 1000);
 
 screen.init(function(){
-    setInterval(function() {
+    var interval = setInterval(function() {
     	var now = new Date;
     //     ct.clear();
     // 	ct.font = "Courier 16pt",
     //     ct.fillText(now.format("yyyy-MM-dd"), 0, 40);
     // 	ct.font = "04b03b 24pt",
     //     ct.fillText(now.format("hh:mm:ss"), 0, 64, 128);
-        screen.clearDisplay();
+        screen.clearDisplay(true, function() {
+            console.log(".....frame buffer cleared");
+        });
+        clearInterval(interval);
+        return;
         screen.writeString("Courier 16pt", 16, now.format("yyyy-MM-dd"), true, true)
         screen.display();
     }, 1000);
