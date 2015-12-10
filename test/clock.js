@@ -1,5 +1,5 @@
 var 
-    Promise = require('promise').
+    Promise = require('promise'),
     res = require("./res"),
     OLED = require("../oled");
 
@@ -26,7 +26,8 @@ var screen = new OLED({
     height: 64,
     // canvas: res.splash,
     fps: 0
-    });
+    }),
+    screenInit;
     // }),
     // ct = screen.getContext("2d");
 
@@ -47,22 +48,33 @@ var screen = new OLED({
 //     screen.display();
 // }, 1000);
 
-screen.init(function() {
-	var now = new Date;
-//     ct.clear();
-// 	ct.font = "Courier 16pt",
-//     ct.fillText(now.format("yyyy-MM-dd"), 0, 40);
-// 	ct.font = "04b03b 24pt",
-//     ct.fillText(now.format("hh:mm:ss"), 0, 64, 128);
-    screen.clearDisplay(true, function() {
-        console.log(".....frame buffer cleared");
+screenCleared = new Promise(function(resolve, reject) {
+    screen.init(function() {
+    	var now = new Date;
+    //     ct.clear();
+    // 	ct.font = "Courier 16pt",
+    //     ct.fillText(now.format("yyyy-MM-dd"), 0, 40);
+    // 	ct.font = "04b03b 24pt",
+    //     ct.fillText(now.format("hh:mm:ss"), 0, 64, 128);
+        screen.clearDisplay(true, function(err, results) {
+            console.log(".....frame buffer cleared");
+            if (err)
+                reject(err);
+            else
+                resolve(results);
+        });
+        return;
+        screen.writeString("Courier 16pt", 16, now.format("yyyy-MM-dd"), true, true)
+        screen.display();
     });
-    return;
-    screen.writeString("Courier 16pt", 16, now.format("yyyy-MM-dd"), true, true)
-    screen.display();
 });
 
-
+screenCleared.then(function(results) {
+        console.log(".......promise resolved");
+    })
+    .catch(function(err) {
+        console.log(".....promise reject");
+    });
 
 
 // ['exit', 'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT', 'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'].forEach(function(element, index, array) {
