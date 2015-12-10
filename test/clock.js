@@ -71,6 +71,7 @@ screenCleared = new Promise(function(resolve, reject) {
 
 screenCleared.then(function(results) {
         console.log(".......promise resolved");
+        // screen.drawBitmap(res.splash, true);
     })
     .catch(function(err) {
         console.log(".....promise reject");

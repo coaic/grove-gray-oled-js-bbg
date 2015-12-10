@@ -632,41 +632,44 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
   if (arguments.length != 2) 
     throw "Callback argument not provided";
 
-  this.update(callback);
-  return;
+  // this.update(callback);
+  // return;
+  if (blen == 0) {
+    this.dirtyBytes = [];
+    callback();
+    return;
+  }
   // check to see if this will even save time
   if (blen > (this.buffer.length / 7)) {
     // just call regular update at this stage, saves on bytes sent
-    this.update();
+    this.update(callback);
     // now that all bytes are synced, reset dirty state
     this.dirtyBytes = [];
 
   } else {
 
-    this._waitUntilReady(function() {
-      // iterate through dirty bytes
-      for (var i = 0; i < blen; i += 1) {
+    // iterate through dirty bytes
+    for (var i = 0; i < blen; i += 1) {
 
-        var byte = byteArray[i];
-        var page = Math.floor(byte / this.WIDTH);
-        var col = Math.floor(byte % this.WIDTH);
+      var byte = byteArray[i];
+      var page = Math.floor(byte / this.WIDTH);
+      var col = Math.floor(byte % this.WIDTH);
 
-        var displaySeq = [
-          this.COLUMN_ADDR, col, col, // column start and end address
-          this.PAGE_ADDR, page, page // page start and end address
-        ];
+      var displaySeq = [
+        this.COLUMN_ADDR, col, col, // column start and end address
+        this.PAGE_ADDR, page, page // page start and end address
+      ];
 
-        var displaySeqLen = displaySeq.length, v;
+      var displaySeqLen = displaySeq.length, v;
 
-        // send intro seq
-        for (v = 0; v < displaySeqLen; v += 1) {
-          this._transfer('cmd', displaySeq[v]);
-        }
-        // send byte, then move on to next byte
-        this._transfer('data', this.buffer[byte]);
-        this.buffer[byte];
+      // send intro seq
+      for (v = 0; v < displaySeqLen; v += 1) {
+        this._transfer('cmd', displaySeq[v]);
       }
-    }.bind(this));
+      // send byte, then move on to next byte
+      this._transfer('data', this.buffer[byte]);
+      this.buffer[byte];
+    }
   }
   // now that all bytes are synced, reset dirty state
   this.dirtyBytes = [];
