@@ -565,7 +565,7 @@ Oled.prototype.invertDisplay = function(bool) {
 }
 
 // draw an image pixel array on the screen
-Oled.prototype.drawBitmap = function(pixels, sync) {
+Oled.prototype.drawBitmap = function(pixels, sync, callback) {
   var immed = (typeof sync === 'undefined') ? true : sync;
   var x, y,
       pixelArray = [];
@@ -578,7 +578,7 @@ Oled.prototype.drawBitmap = function(pixels, sync) {
   }
 
   if (immed) {
-    this._updateDirtyBytes(this.dirtyBytes);
+    this._updateDirtyBytes(this.dirtyBytes, callback);
   }
 }
 
@@ -630,7 +630,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
       displaySeq = [];
       
   if (arguments.length != 2) 
-    throw "Callback argument not provided";
+    throw new Error("Callback argument not provided");
 
   // this.update(callback);
   // return;
