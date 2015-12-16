@@ -27,7 +27,8 @@ var screen = new OLED({
     // canvas: res.splash,
     fps: 0
     }),
-    screenInit;
+    screenInit,
+    screenCleared;
     // }),
     // ct = screen.getContext("2d");
 
@@ -68,6 +69,17 @@ screenCleared = new Promise(function(resolve, reject) {
         screen.display();
     });
 });
+
+screenInit = screen.init();
+screenInit.then(function(results) {
+        console.log(".....screen init promise resolved");
+    })
+    .catch(function(err) {
+        console.log(".....screen init promise rejected");
+        throw new Error("Promise rejected: " + err);
+    });
+
+return;
 
 screenCleared.then(function(results) {
         console.log(".......promise resolved");

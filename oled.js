@@ -1,5 +1,6 @@
 var i2c = require('i2c-bus'),
-    async = require('async');
+    async = require('async')
+    Promise = require('promise');
 
 var Oled = function(opts) {
 
@@ -93,8 +94,20 @@ var Oled = function(opts) {
   // this._initialise();
 }
 
-Oled.prototype.init = function (cb) {
-  this._initialise(cb);
+// Oled.prototype.init = function (cb) {
+Oled.prototype.init = function () {
+  var me = this;
+  
+  // this._initialise(cb);
+  var promise = new Promise(function(resolve, reject) {
+    me._initialise(function(err, results) {
+      if (err)
+        reject(new Error("Oled init failed: " + err + "; results: " + results));
+      else
+        resolve(results);
+    })
+  });
+  return promise;
 }
 
 Oled.prototype._sendData = function (buffer, bufferLen, callback) {
@@ -135,27 +148,27 @@ Oled.prototype._sendCommand = function () {
         this.i2c1.writeByte(this.ADDRESS, cmd, buffer[0], function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", data: " + data[0] + ", error: " + err);
-                callback(err);
+                callback(err, "command fail");
             } else {
-                callback();
+                callback(err, "command success");
             }
         });
     } else if (3 == arguments.length && buffer.length > 1) {
         this.i2c1.writeI2cBlock(this.ADDRESS, cmd, buffer.length, buffer, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command and data: " + cmd + ", data: " + buffer + ", error: " + err);
-                callback(err);
+                callback(err, "command fail");
             } else {
-                callback();
+                callback(err, "command success");
             }
         });
     } else if (2 == arguments.length) {
         this.i2c1.sendByte(this.ADDRESS, cmd, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                callback(err);
+                callback(err, "command fail");
             } else {
-                callback();
+                callback(err, "command success");
             }
         });
     }
@@ -222,7 +235,12 @@ Oled.prototype._initialise = function(callback) {
   var me = this;
     async.series([
       function(cb) {
-          me.i2c1 = i2c.open(me.BUS1, cb);
+          me.i2c1 = i2c.open(me.BUS1, function(err, result) {
+            if (err) 
+              cb(err, "open fail: " + result);
+            else
+              cb(err, "open success: " + result)
+          });
       },
       function(cb) {
           me._sendCommand(me.SETCOMMANDLOCK, cb);                        // Unlock OLED driver IC MCU interface from entering command. i.e: Accept commands
