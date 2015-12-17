@@ -127,6 +127,10 @@ Oled.prototype._sendData = function (buffer, bufferLen, callback) {
     });
 }
 
+Oled.prototype._sendDataByte = function (byte, callback) {
+  this.i2c1.sendByte(this.ADDRESS, byte, callback);
+}
+
 Oled.prototype._sendCommand = function () {
     var cmd,
         buffer,
@@ -536,7 +540,7 @@ Oled.prototype._drawChar = function(byteArray, size, sync) {
       if (size === 1) {
         xpos = x + i;
         ypos = y + j;
-        this.drawPixel([xpos, ypos, color], false);
+        this._drawPixel([xpos, ypos, color], false);
       } else {
         // MATH! Calculating pixel size multiplier to primitively scale the font
         xpos = x + (i * size);
@@ -693,8 +697,22 @@ Oled.prototype.invertDisplay = function(bool) {
   }
 }
 
+Oled.prototype.drawBitmap = function(pixels, sync) {
+  var me = this,
+    promise = new Promise(function(resolve, reject) {
+      me._drawBitmap(pixels, sync, function(err, results) {
+        if (err)
+          reject(new Error("Oled drawBitmap failed: " + err + "; results: " + results));
+        else
+          resolve(results);
+      });
+    });
+      
+  return promise;
+}
+
 // draw an image pixel array on the screen
-Oled.prototype.drawBitmap = function(pixels, sync, callback) {
+Oled.prototype._drawBitmap = function(pixels, sync, callback) {
   var immed = (typeof sync === 'undefined') ? true : sync;
   var x, y,
       pixelArray = [];
@@ -703,7 +721,7 @@ Oled.prototype.drawBitmap = function(pixels, sync, callback) {
     x = Math.floor(i % this.WIDTH);
     y = Math.floor(i / this.WIDTH);
 
-    this.drawPixel([x, y, pixels[i]], false);
+    this._drawPixel([x, y, pixels[i]], false);
   }
 
   if (immed) {
@@ -712,7 +730,7 @@ Oled.prototype.drawBitmap = function(pixels, sync, callback) {
 }
 
 // draw one or many pixels on oled
-Oled.prototype.drawPixel = function(pixels, sync) {
+Oled.prototype._drawPixel = function(pixels, sync) {
   var immed = (typeof sync === 'undefined') ? true : sync;
 
   // handle lazy single pixel case
@@ -756,7 +774,9 @@ Oled.prototype.drawPixel = function(pixels, sync) {
 // looks at dirty bytes, and sends the updated bytes to the display
 Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
   var blen = byteArray.length, i,
-      displaySeq = [];
+      displaySeq = [],
+      byte, page, col,
+      me = this;
       
   if (arguments.length != 2) 
     throw new Error("Callback argument not provided");
@@ -765,7 +785,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
   // return;
   if (blen == 0) {
     this.dirtyBytes = [];
-    callback(null, "success");
+    callback(null, "success 0");
     return;
   }
   // check to see if this will even save time
@@ -777,7 +797,84 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
 
   } else {
 
+    // // iterate through dirty bytes
+    // for (var i = 0; i < blen; i += 1) {
+
+    //   var byte = byteArray[i];
+    //   var page = Math.floor(byte / this.WIDTH);
+    //   var col = Math.floor(byte % this.WIDTH);
+
+    //   var displaySeq = [
+    //     this.COLUMN_ADDR, col, col, // column start and end address
+    //     this.PAGE_ADDR, page, page // page start and end address
+    //   ];
+
+    //   var displaySeqLen = displaySeq.length, v;
+
+    //   // send intro seq
+    //   for (v = 0; v < displaySeqLen; v += 1) {
+    //     this._transfer('cmd', displaySeq[v]);
+    //   }
+    //   // send byte, then move on to next byte
+    //   this._transfer('data', this.buffer[byte]);
+    //   this.buffer[byte];
     // iterate through dirty bytes
+    i = 0;
+    byte = byteArray[i];
+    page = Math.floor(byte / me.WIDTH);
+    col = Math.floor(byte % me.WIDTH);
+
+    async.whilst(
+      function() {
+        return i < blen;
+      },
+      function(callback) {
+        async.series([
+          function(cb) {
+            me._sendCommand(me.COLUMN_ADDR, new Buffer([ col, col]), function(err, results) {
+              if (err)
+                cb(err, "COLUMN_ADDR: " + err + " - " + results);
+              else
+                cb(err, "COLUMN_ADDR: " + results);
+            }); 
+          },
+          function(cb) {
+            me._sendCommand(me.PAGE_ADDR, new Buffer([ page, page]), function(err, results) {
+              if (err)
+                cb(err, "PAGE_ADDR: " + err + " - " + results);
+              else
+                cb(err, "PAGE_ADDR: " + results);
+            }); 
+          },
+          function(cb) {
+            me._sendDataByte(me.buffer[byte], function(err, results) {
+              if (err)
+                cb(err, "_sendDataByte: " + err + " - " + results);
+              else
+                cb(err, "_sendDataByte: " + results);
+            }); 
+          }
+        ], function(err, results) {
+             if (err)
+               callback(err, results);
+             else {
+               i++;
+               if (i < blen) {
+                 byte = byteArray[i];
+                 page = Math.floor(byte / me.WIDTH);
+                 col = Math.floor(byte % me.WIDTH);
+               }
+               callback(null, i);
+             }
+        });
+      },
+      function(err, result) {
+        // now that all bytes are synced, reset dirty state
+        me.dirtyBytes = [];
+        callback(err, result);
+      }
+    );
+    
     for (var i = 0; i < blen; i += 1) {
 
       var byte = byteArray[i];
@@ -813,7 +910,7 @@ Oled.prototype.drawLine = function(x0, y0, x1, y1, color, sync) {
       err = (dx > dy ? dx : -dy) / 2;
 
   while (true) {
-    this.drawPixel([x0, y0, color], false);
+    this._drawPixel([x0, y0, color], false);
 
     if (x0 === x1 && y0 === y1) break;
 

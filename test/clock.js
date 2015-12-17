@@ -71,15 +71,20 @@ var screen = new OLED({
 screen.init()
     .then(function(results) {
         console.log(".....screen init promise resolved");
-    })
-    .then(function(results) {
         screen.clearDisplay(true)
             .then(function(results) {
                 console.log(".....screen cleared promise resolved");
+                screen.drawBitmap(res.splash, true)
+                    .then(function(results) {
+                        console.log(".....screen drawBitmap promise resolved");
+                    })
+                    .catch(function(err) {
+                        console.trace(".....screen drawBitmap promise rejected: " + err);
+                    });
             })
             .catch(function(err) {
                 console.trace(".....screen clear promise rejected: " + err);
-            })
+            });
     })
     .catch(function(err) {
         console.trace(".....screen init promise rejected: " + err);
