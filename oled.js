@@ -148,56 +148,56 @@ Oled.prototype._sendCommand = function () {
         this.i2c1.writeByte(this.ADDRESS, cmd, buffer[0], function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", data: " + data[0] + ", error: " + err);
-                callback(err, "command fail");
+                callback(err, "fail");
             } else {
-                callback(err, "command success");
+                callback(err, "success");
             }
         });
     } else if (3 == arguments.length && buffer.length > 1) {
         this.i2c1.writeI2cBlock(this.ADDRESS, cmd, buffer.length, buffer, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command and data: " + cmd + ", data: " + buffer + ", error: " + err);
-                callback(err, "command fail");
+                callback(err, "fail");
             } else {
-                callback(err, "command success");
+                callback(err, "success");
             }
         });
     } else if (2 == arguments.length) {
         this.i2c1.sendByte(this.ADDRESS, cmd, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                callback(err, "command fail");
+                callback(err, "fail");
             } else {
-                callback(err, "command success");
+                callback(err, "success");
             }
         });
     }
 }
 
-Oled.prototype.setDisplayModeNormal = function (cb) {
+Oled.prototype._setDisplayModeNormal = function (cb) {
     this._sendCommand(this.NORMAL_DISPLAY, cb);
 }
 
-Oled.prototype.setDisplayModeAllOn = function (cb) {
+Oled.prototype._setDisplayModeAllOn = function (cb) {
     this._sendCommand(0xA5, cb);
 }
 
-Oled.prototype.setDisplayModeAllOff = function (cb) {
+Oled.prototype._setDisplayModeAllOff = function (cb) {
     this._sendCommand(0xA6, cb);
 }
 
-Oled.prototype.setDisplayModeInverse = function (cb) {
+Oled.prototype._setDisplayModeInverse = function (cb) {
     this._sendCommand(this.INVERT_DISPLAY, cb);
 }
 
-Oled.prototype.setEnableScroll = function (on, cb) {
+Oled.prototype._setEnableScroll = function (on, cb) {
     if (on)
         this._sendCommand(this.ACTIVATE_SCROLL, cb);
     else
         this._sendCommand(this.DEACTIVATE_SCROLL, cb);
 }
 
-Oled.prototype.setEnableDisplay = function (on, cb) {
+Oled.prototype._setEnableDisplay = function (on, cb) {
     if (on) 
         this._sendCommand(this.DISPLAY_ON, cb);
     else
@@ -235,76 +235,168 @@ Oled.prototype._initialise = function(callback) {
   var me = this;
     async.series([
       function(cb) {
-          me.i2c1 = i2c.open(me.BUS1, function(err, result) {
+          me.i2c1 = i2c.open(me.BUS1, function(err, results) {
             if (err) 
-              cb(err, "open fail: " + result);
+              cb(err, "open fail: " + err + " - " + results);
             else
-              cb(err, "open success: " + result)
+              cb(err, "open success: " + results);
           });
       },
       function(cb) {
-          me._sendCommand(me.SETCOMMANDLOCK, cb);                        // Unlock OLED driver IC MCU interface from entering command. i.e: Accept commands
+          me._sendCommand(me.SETCOMMANDLOCK, function(err, results) {   // Unlock OLED driver IC MCU interface from entering command. i.e: Accept commands
+            if (err)
+              cb(err, "SETCOMMANDLOCK: " + err + " - " + results);
+            else
+              cb(err, "SETCOMMANDLOCK: " + results);
+          });
       },
       function(cb) {
-          me._sendCommand(me.RESETPROTECTION, cb);
+          me._sendCommand(me.RESETPROTECTION, function(err, results) {
+            if (err)
+              cb(err, "RESETPROTECTION: " + err + " - " + results);
+            else
+              cb(err, "RESETPROTECTION: " + results);
+          });
       },
       function(cb) {
-          me.setEnableDisplay(false, cb);
+          me._setEnableDisplay(false, function(err, results) {
+            if (err)
+              cb(err, "_setEnableDisplay: " + err + " - " + results);
+            else
+              cb(err, "_setEnableDisplay: " + results);
+          });
       },
       function(cb) {
-          me._sendCommand(me.SET_MULTIPLEX, new Buffer([ me.screenConfig['multiplex'] ]), cb);         // set multiplex ratio
+          me._sendCommand(me.SET_MULTIPLEX, new Buffer([ me.screenConfig['multiplex'] ]), function(err, results) {  // set multiplex ratio
+            if (err)
+              cb(err, "SET_MULTIPLEX: " + err + " - " + results);
+            else
+              cb(err, "SET_MULTIPLEX: " + results);
+          });         
       },
       function(cb) {
-          me._sendCommand(me.SET_START_LINE, new Buffer([ 0x00 ]), cb);                  // set display start line
+          me._sendCommand(me.SET_START_LINE, new Buffer([ 0x00 ]), function(err, results) {  // set display start line
+            if (err)
+              cb(err, "SET_START_LINE: " + err + " - " + results);
+            else
+              cb(err, "SET_START_LINE: " + results);
+          });                  
       },
       function(cb) {
-          me._sendCommand(me.SET_DISPLAY_OFFSET, new Buffer([ 0x60 ]), cb);              // set display offset
+          me._sendCommand(me.SET_DISPLAY_OFFSET, new Buffer([ 0x60 ]), function(err, results) {  // set display offset
+            if (err)
+              cb(err, "SET_DISPLAY_OFFSET: " + err + " - " + results);
+            else
+              cb(err, "SET_DISPLAY_OFFSET: " + results);
+          });              
       },
       function(cb) {
-          me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), cb);                      // set remap
+          me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {  // set remap
+            if (err)
+              cb(err, "SEG_REMAP: " + err + " - " + results);
+            else
+              cb(err, "SEG_REMAP: " + results);
+          });                      
       },
       function(cb) {
-          me._sendCommand(me.SET_VDD_INTERNAL, new Buffer([ 0x01 ]), cb);                // set vdd internal
+          me._sendCommand(me.SET_VDD_INTERNAL, new Buffer([ 0x01 ]), function(err, results) {  // set vdd internal
+            if (err)
+              cb(err, "SET_VDD_INTERNAL: " + err + " - " + results);
+            else
+              cb(err, "SET_VDD_INTERNAL: " + results);
+          });                
       },
       function(cb) {
-          me._sendCommand(me.SET_CONTRAST, new Buffer([ 0x53 ]), cb);                   // set contrast
+          me._sendCommand(me.SET_CONTRAST, new Buffer([ 0x53 ]), function(err, results) {  // set contrast
+            if (err)
+              cb(err, "SET_CONTRAST: " + err + " - " + results);
+            else
+              cb(err, "SET_CONTRAST: " + results);
+          });                   
       },
       function(cb) {
-          me._sendCommand(me.SET_PHASE_LENGTH, new Buffer([ 0x51 ]), cb);                // set phase length
+          me._sendCommand(me.SET_PHASE_LENGTH, new Buffer([ 0x51 ]), function(err, results) {  // set phase length
+            if (err)
+              cb(err, "SET_PHASE_LENGTH: " + err + " - " + results);
+            else
+              cb(err, "SET_PHASE_LENGTH: " + results);
+          });                
       },
       function(cb) {
-          me._sendCommand(me.SET_DISPLAY_CLOCK_DIVIDE_RATIO, new Buffer([ 0x01 ]), cb);    // set display clock divide ratio/oscillator frequency
+          me._sendCommand(me.SET_DISPLAY_CLOCK_DIVIDE_RATIO, new Buffer([ 0x01 ]), function(err, results) {  // set display clock divide ratio/oscillator frequency
+            if (err)
+              cb(err, "SET_DISPLAY_CLOCK_DIVIDE_RATIO: " + err + " - " + results);
+            else
+              cb(err, "SET_DISPLAY_CLOCK_DIVIDE_RATIO: " + results);
+          });    
       },
       function(cb) {
-          me._sendCommand(me.SET_LINEAR_LUT, cb);                          // set linear gray scale
+          me._sendCommand(me.SET_LINEAR_LUT, function(err, results) {  // set linear gray scale
+            if (err)
+              cb(err, "SET_LINEAR_LUT: " + err + " - " + results);
+            else
+              cb(err, "SET_LINEAR_LUT: " + results);
+          });                          
       },
       function(cb) {
-          me._sendCommand(me.SET_PRECHARGE_VOLTAGE, new Buffer([ me.VCOMH ]), cb);          // set pre charge voltage to VCOMH
+          me._sendCommand(me.SET_PRECHARGE_VOLTAGE, new Buffer([ me.VCOMH ]), function(err, results) {  // set pre charge voltage to VCOMH
+            if (err)
+              cb(err, "SET_PRECHARGE_VOLTAGE: " + err + " - " + results);
+            else
+              cb(err, "SET_PRECHARGE_VOLTAGE: " + results);
+          });          
       },
       function(cb) {
-          me._sendCommand(me.SET_VCOMH, new Buffer([ me.POINT_86_VCC ]), cb);                // set VCOMh .86 x Vcc
+          me._sendCommand(me.SET_VCOMH, new Buffer([ me.POINT_86_VCC ]), function(err, results) {  // set VCOMh .86 x Vcc
+            if (err)
+              cb(err, "SET_VCOMH: " + err + " - " + results);
+            else
+              cb(err, "SET_VCOMH: " + results);
+          });                
       },
       function(cb) {
-          me._sendCommand(me.SET_SECOND_PRECHARGE, new Buffer([ 0x01 ]), cb);            // set second pre charge period
+          me._sendCommand(me.SET_SECOND_PRECHARGE, new Buffer([ 0x01 ]), function(err, results) {  // set second pre charge period
+            if (err)
+              cb(err, "SET_SECOND_PRECHARGE: " + err + " - " + results);
+            else
+              cb(err, "SET_SECOND_PRECHARGE: " + results);
+          });            
       },
       function(cb) {
-          me._sendCommand(me.SET_ENABLE_SECOND_PRECHARGE, new Buffer([ me.INTERNAL_VSL ]), cb); // enable second pre charge and internal VSL
+          me._sendCommand(me.SET_ENABLE_SECOND_PRECHARGE, new Buffer([ me.INTERNAL_VSL ]), function(err, results) {  // enable second pre charge and internal VSL
+            if (err)
+              cb(err, "SET_ENABLE_SECOND_PRECHARGE: " + err + " - " + results);
+            else
+              cb(err, "SET_ENABLE_SECOND_PRECHARGE: " + results);
+          }); 
       },
   
       function(cb) {
-          me.setDisplayModeNormal(cb);
+          me._setDisplayModeNormal(function(err, results) {  
+            if (err)
+              cb(err, "_setDisplayModeNormal: " + err + " - " + results);
+            else
+              cb(err, "_setDisplayModeNormal: " + results);
+          });
       },
       function(cb) {
-          me.setEnableScroll(false, cb);
+          me._setEnableScroll(false, function(err, results) {  
+            if (err)
+              cb(err, "_setEnableScroll: " + err + " - " + results);
+            else
+              cb(err, "_setEnableScroll: " + results);
+          });
       },
       function(cb) {
-          me.setEnableDisplay(true, cb);
+          me._setEnableDisplay(true, function(err, results) {  
+            if (err)
+              cb(err, "_setEnableDisplay: " + err + " - " + results);
+            else
+              cb(err, "_setEnableDisplay: " + results);
+          });
       }
   ], function(err, results) {
-      if (err)
-          callback(err, results);
-      else
-          callback();
+        callback(err, results);
   });
 }
 
