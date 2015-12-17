@@ -26,9 +26,7 @@ var screen = new OLED({
     height: 64,
     // canvas: res.splash,
     fps: 0
-    }),
-    screenInit,
-    screenCleared;
+    });
     // }),
     // ct = screen.getContext("2d");
 
@@ -49,34 +47,42 @@ var screen = new OLED({
 //     screen.display();
 // }, 1000);
 
-screenCleared = new Promise(function(resolve, reject) {
-    screen.init(function() {
-    	var now = new Date;
-    //     ct.clear();
-    // 	ct.font = "Courier 16pt",
-    //     ct.fillText(now.format("yyyy-MM-dd"), 0, 40);
-    // 	ct.font = "04b03b 24pt",
-    //     ct.fillText(now.format("hh:mm:ss"), 0, 64, 128);
-        screen.clearDisplay(true, function(err, results) {
-            console.log(".....frame buffer cleared");
-            if (err)
-                reject(err);
-            else
-                resolve(results);
-        });
-        return;
-        screen.writeString("Courier 16pt", 16, now.format("yyyy-MM-dd"), true, true)
-        screen.display();
-    });
-});
+// screenCleared = new Promise(function(resolve, reject) {
+//     screen.init(function() {
+//     	var now = new Date;
+//     //     ct.clear();
+//     // 	ct.font = "Courier 16pt",
+//     //     ct.fillText(now.format("yyyy-MM-dd"), 0, 40);
+//     // 	ct.font = "04b03b 24pt",
+//     //     ct.fillText(now.format("hh:mm:ss"), 0, 64, 128);
+//         screen.clearDisplay(true, function(err, results) {
+//             console.log(".....frame buffer cleared");
+//             if (err)
+//                 reject(err);
+//             else
+//                 resolve(results);
+//         });
+//         return;
+//         screen.writeString("Courier 16pt", 16, now.format("yyyy-MM-dd"), true, true)
+//         screen.display();
+//     });
+// });
 
-screenInit = screen.init();
-screenInit.then(function(results) {
+screen.init()
+    .then(function(results) {
         console.log(".....screen init promise resolved");
     })
+    .then(function(results) {
+        screen.clearDisplay(true)
+            .then(function(results) {
+                console.log(".....screen cleared promise resolved");
+            })
+            .catch(function(err) {
+                console.trace(".....screen clear promise rejected: " + err);
+            })
+    })
     .catch(function(err) {
-        console.log(".....screen init promise rejected");
-        throw new Error("Promise rejected: " + err);
+        console.trace(".....screen init promise rejected: " + err);
     });
 
 return;

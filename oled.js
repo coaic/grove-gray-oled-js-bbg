@@ -91,22 +91,20 @@ var Oled = function(opts) {
   var screenSize = this.WIDTH + 'x' + this.HEIGHT;
   this.screenConfig = config[screenSize];
 
-  // this._initialise();
 }
 
 // Oled.prototype.init = function (cb) {
 Oled.prototype.init = function () {
-  var me = this;
-  
-  // this._initialise(cb);
-  var promise = new Promise(function(resolve, reject) {
-    me._initialise(function(err, results) {
-      if (err)
-        reject(new Error("Oled init failed: " + err + "; results: " + results));
-      else
-        resolve(results);
-    })
-  });
+  var me = this,
+      promise = new Promise(function(resolve, reject) {
+        me._initialise(function(err, results) {
+          if (err)
+            reject(new Error("Oled init failed: " + err + "; results: " + results));
+          else
+            resolve(results);
+        })
+      });
+    
   return promise;
 }
 
@@ -125,7 +123,7 @@ Oled.prototype._sendData = function (buffer, bufferLen, callback) {
       });
     },
     function(err, n) {
-      callback();
+      callback(err, n);
     });
 }
 
@@ -581,7 +579,7 @@ Oled.prototype._findCharBuf = function(font, c) {
 }
 
 // send the entire framebuffer to the oled
-Oled.prototype.update = function(callback) {
+Oled.prototype._update = function(callback) {
   // // wait for oled to be ready
   // this._waitUntilReady(function() {
   //   // set the start and endbyte locations for oled display update
@@ -610,16 +608,23 @@ Oled.prototype.update = function(callback) {
   var me = this;
   async.series([
       function(cb) {
-        me._sendCommand(me.COLUMN_ADDR, new Buffer([ me.screenConfig.coloffset, me.screenConfig.coloffset + me.WIDTH - 1 ]), cb);
+        me._sendCommand(me.COLUMN_ADDR, new Buffer([ me.screenConfig.coloffset, me.screenConfig.coloffset + me.WIDTH - 1 ]), function(err, results) {
+            if (err)
+              cb(err, "COLUMN_ADDR: " + err + " - " + results);
+            else
+              cb(err, "COLUMN_ADDR: " + results);
+          }); 
       },
       function(cb) {
-        me._sendData(me.buffer, me.buffer.length, cb)
+        me._sendData(me.buffer, me.buffer.length, function(err, results) {
+            if (err)
+              cb(err, "_sendData: " + err + " - " + results);
+            else
+              cb(err, "_sendData: " + results);
+          }); 
       }
     ], function(err, results) {
-      if (err)
           callback(err, results);
-      else
-          callback();
   });
 }
 
@@ -647,8 +652,22 @@ Oled.prototype.turnOnDisplay = function() {
   this._transfer('cmd', this.DISPLAY_ON);
 }
 
+Oled.prototype.clearDisplay = function(sync) {
+  var me = this,
+      promise = new Promise(function(resolve, reject) {
+        me._clearDisplay(sync, function(err, results) {
+          if (err)
+            reject(new Error("Oled clearDisplay failed: " + err + "; results: " + results));
+          else
+            resolve(results);
+        });
+      });
+      
+  return promise;
+}
+
 // clear all pixels currently on the display
-Oled.prototype.clearDisplay = function(sync, callback) {
+Oled.prototype._clearDisplay = function(sync, callback) {
   var immed = (typeof sync === 'undefined') ? true : sync;
   // write off pixels
   //this.buffer.fill(0x00);
@@ -746,13 +765,13 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
   // return;
   if (blen == 0) {
     this.dirtyBytes = [];
-    callback();
+    callback(null, "success");
     return;
   }
   // check to see if this will even save time
   if (blen > (this.buffer.length / 7)) {
     // just call regular update at this stage, saves on bytes sent
-    this.update(callback);
+    this._update(callback);
     // now that all bytes are synced, reset dirty state
     this.dirtyBytes = [];
 
