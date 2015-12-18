@@ -22,8 +22,8 @@ var Oled = function(opts) {
   this.DISPLAY_ON = 0xAF;
   this.SET_DISPLAY_CLOCK_DIV = 0xD5;
   this.SET_MULTIPLEX = 0xA8;
-  this.SET_DISPLAY_OFFSET = 0xA3;
-  this.SET_START_LINE = 0x00;
+  this.SET_DISPLAY_OFFSET = 0xA2;
+  this.SET_START_LINE = 0xA1;
   this.VCOMH = 0x08;
   this.SET_VCOMH = 0xBE;
   this.SET_SECOND_PRECHARGE = 0xB6;
@@ -47,7 +47,7 @@ var Oled = function(opts) {
   // this.DISPLAY_ALL_ON_RESUME = 0xA4;
   this.NORMAL_DISPLAY = 0xA4;
   this.COLUMN_ADDR = 0x15;
-  this.PAGE_ADDR = 0x22;
+  this.ROW_ADDR = 0x75;
   this.INVERT_DISPLAY = 0xA7;
   this.ACTIVATE_SCROLL = 0x2F;
   this.DEACTIVATE_SCROLL = 0x2E;
@@ -73,7 +73,7 @@ var Oled = function(opts) {
       'coloffset': 0
     },
     '128x64': {
-      'multiplex': 0xA8,
+      'multiplex': 0x5F,
       'compins': 0x12,
       'coloffset': 0
     },
@@ -101,7 +101,7 @@ Oled.prototype.init = function () {
           if (err)
             reject(new Error("Oled init failed: " + err + "; results: " + results));
           else
-            resolve(results);
+            setTimeout(function() { resolve(results); }, 100);
         })
       });
     
@@ -756,18 +756,18 @@ Oled.prototype._drawPixel = function(pixels, sync) {
     // I wanna can this, this tool is for devs who get 0 indexes
     //x -= 1; y -=1;
     var byte = 0,
-        page = Math.floor(y / 8),
-        pageShift = 0x01 << (y - 8 * page);
+        row = Math.floor(y / 8),
+        rowShift = 0x01 << (y - 8 * row);
 
     // is the pixel on the first row of the page?
-    (page == 0) ? byte = x : byte = x + (this.WIDTH * page);
+    (row == 0) ? byte = x : byte = x + (this.WIDTH * row);
 
     // colors! Well, monochrome.
     if (color === 'BLACK' || color === 0) {
-      this.buffer[byte] &= ~pageShift;
+      this.buffer[byte] &= ~rowShift;
     }
     if (color === 'WHITE' || color > 0) {
-      this.buffer[byte] |= pageShift;
+      this.buffer[byte] |= rowShift;
     }
 
     // push byte to dirty if not already there
@@ -786,7 +786,7 @@ Oled.prototype._drawPixel = function(pixels, sync) {
 Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
   var blen = byteArray.length, i,
       displaySeq = [],
-      byte, page, col,
+      byte, row, col,
       me = this;
       
   if (arguments.length != 2) 
@@ -832,7 +832,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
     // iterate through dirty bytes
     i = 0;
     byte = byteArray[i];
-    page = Math.floor(byte / me.WIDTH);
+    row = Math.floor(byte / me.WIDTH);
     col = Math.floor(byte % me.WIDTH);
 
     async.whilst(
@@ -850,11 +850,11 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
             }); 
           },
           function(cb) {
-            me._sendCommand(me.PAGE_ADDR, new Buffer([ page, page]), function(err, results) {
+            me._sendCommand(me.ROW_ADDR, new Buffer([ row, row]), function(err, results) {
               if (err)
-                cb(err, "PAGE_ADDR: " + err + " - " + results);
+                cb(err, "ROW_ADDR: " + err + " - " + results);
               else
-                cb(err, "PAGE_ADDR: " + results);
+                cb(err, "ROW_ADDR: " + results);
             }); 
           },
           function(cb) {
@@ -872,7 +872,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
                i++;
                if (i < blen) {
                  byte = byteArray[i];
-                 page = Math.floor(byte / me.WIDTH);
+                 row = Math.floor(byte / me.WIDTH);
                  col = Math.floor(byte % me.WIDTH);
                }
                cbWhilst(null, results);
