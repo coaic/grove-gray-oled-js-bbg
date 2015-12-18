@@ -128,7 +128,14 @@ Oled.prototype._sendData = function (buffer, bufferLen, callback) {
 }
 
 Oled.prototype._sendDataByte = function (byte, callback) {
-  this.i2c1.sendByte(this.ADDRESS, byte, callback);
+  this.i2c1.sendByte(this.ADDRESS, byte, function(err, bytesWritten, buffer) {
+            if (err) {
+                console.log("I2C Error sending data byte: error: " + err);
+                callback(err, "fail");
+            } else {
+                callback(err, "success");
+            }
+        });
 }
 
 Oled.prototype._sendCommand = function () {
@@ -828,7 +835,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
       function() {
         return i < blen;
       },
-      function(callback) {
+      function(cbWhilst) {
         async.series([
           function(cb) {
             me._sendCommand(me.COLUMN_ADDR, new Buffer([ col, col]), function(err, results) {
@@ -856,7 +863,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
           }
         ], function(err, results) {
              if (err)
-               callback(err, results);
+               cbWhilst(err, results);
              else {
                i++;
                if (i < blen) {
@@ -864,41 +871,16 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
                  page = Math.floor(byte / me.WIDTH);
                  col = Math.floor(byte % me.WIDTH);
                }
-               callback(null, i);
+               cbWhilst(null, results);
              }
         });
       },
-      function(err, result) {
+      function(err, results) {
         // now that all bytes are synced, reset dirty state
         me.dirtyBytes = [];
-        callback(err, result);
-      }
-    );
-    
-    for (var i = 0; i < blen; i += 1) {
-
-      var byte = byteArray[i];
-      var page = Math.floor(byte / this.WIDTH);
-      var col = Math.floor(byte % this.WIDTH);
-
-      var displaySeq = [
-        this.COLUMN_ADDR, col, col, // column start and end address
-        this.PAGE_ADDR, page, page // page start and end address
-      ];
-
-      var displaySeqLen = displaySeq.length, v;
-
-      // send intro seq
-      for (v = 0; v < displaySeqLen; v += 1) {
-        this._transfer('cmd', displaySeq[v]);
-      }
-      // send byte, then move on to next byte
-      this._transfer('data', this.buffer[byte]);
-      this.buffer[byte];
-    }
+        callback(err, results);
+      });
   }
-  // now that all bytes are synced, reset dirty state
-  this.dirtyBytes = [];
 }
 
 // using Bresenham's line algorithm
