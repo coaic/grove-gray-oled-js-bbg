@@ -753,17 +753,48 @@ Oled.prototype.invertDisplay = function(bool) {
   }
 }
 
+Oled.prototype._setRowAndColumn = function(row, col, callback) {
+  var me = this;
+  
+  async.series([
+      function(cb) {
+        me._sendCommand(me.ROW_ADDR, new Buffer(row), function(err, results) {  // set start and end row address
+          if (err)
+            cb(err, "ROW_ADDR: " + err + " - " + results);
+          else
+            cb(err, "ROW_ADDR: " + results);
+        });            
+      },
+      function(cb) {
+        me._sendCommand(me.COLUMN_ADDR, new Buffer(col), function(err, results) {  // set start and end column address
+          if (err)
+            cb(err, "COLUMN_ADDR: " + err + " - " + results);
+          else
+            cb(err, "COLUMN_ADDR: " + results);
+        });
+      }
+    ], function(err, results) {
+          callback(err, results);
+  });
+}
+
 Oled.prototype.drawBitmap = function(pixels, sync) {
   var me = this,
     promise = new Promise(function(resolve, reject) {
-      me._drawBitmap(pixels, sync, function(err, results) {
-        if (err)
-          reject(new Error("Oled drawBitmap failed: " + err + "; results: " + results));
-        else
-          resolve(results);
-      });
+      me._setRowAndColumn([ 0x00, 0x5F ], [ 0x08, 0x37 ], function(err, results) {
+          if (err)
+            reject(new Error("Oled _setRowAndColumn Failed: " + err + "; results: " + results));
+          else
+            me._drawBitmap(pixels, sync, function(err, results) {
+              if (err)
+                reject(new Error("Oled drawBitmap failed: " + err + "; results: " + results));
+              else
+                resolve(results);
+            });
+        }
+      );
     });
-      
+
   return promise;
 }
 
