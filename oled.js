@@ -918,19 +918,11 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
       function(cbWhilst) {
         async.series([
           function(cb) {
-            me._sendCommand(me.COLUMN_ADDR, new Buffer([ col, col]), function(err, results) {
+            me._setRowAndColumn([ row, row ], [ col, col ], function(err, results) {
               if (err)
-                cb(err, "COLUMN_ADDR: " + err + " - " + results);
+                cb(err, "_setRowAndColumn: " + err + " - " + results);
               else
-                cb(err, "COLUMN_ADDR: " + results);
-            }); 
-          },
-          function(cb) {
-            me._sendCommand(me.ROW_ADDR, new Buffer([ row, row]), function(err, results) {
-              if (err)
-                cb(err, "ROW_ADDR: " + err + " - " + results);
-              else
-                cb(err, "ROW_ADDR: " + results);
+                cb(err, "_setRowAndColumn: " + results);
             }); 
           },
           function(cb) {
