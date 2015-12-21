@@ -159,7 +159,7 @@ Oled.prototype._sendCommand = function () {
         console.log("..........cmd: " + cmd.toString(16) + "; cmd: " + buffer[0].toString(16));
         async.series([
           function(cb) {
-            me.i2c1.sendByte(this.ADDRESS, cmd, function(err, bytesWritten, buffer) {
+            me.i2c1.sendByte(me.ADDRESS, cmd, function(err, bytesWritten, buffer) {
               if (err) {
                   console.log("I2C Error sending command: " + cmd + ", error: " + err);
                   cb(err, "fail");
@@ -169,7 +169,7 @@ Oled.prototype._sendCommand = function () {
             });
           },
           function(cb) {
-            me.i2c1.sendByte(this.ADDRESS, buffer[0], function(err, bytesWritten, buffer) {
+            me.i2c1.sendByte(me.ADDRESS, buffer[0], function(err, bytesWritten, buffer) {
               if (err) {
                   console.log("I2C Error sending command: " + buffer[0] + ", error: " + err);
                   cb(err, "fail");
@@ -186,7 +186,7 @@ Oled.prototype._sendCommand = function () {
         console.log("..........cmd: " + cmd.toString(16) + "; cmd: " + buffer[0].toString(16) + "; cmd: " + buffer[1].toString(16));
         async.series([
           function(cb) {
-            me.i2c1.sendByte(this.ADDRESS, cmd, function(err, bytesWritten, buffer) {
+            me.i2c1.sendByte(me.ADDRESS, cmd, function(err, bytesWritten, buffer) {
               if (err) {
                   console.log("I2C Error sending command: " + cmd + ", error: " + err);
                   cb(err, "fail");
@@ -196,7 +196,7 @@ Oled.prototype._sendCommand = function () {
             });
           },
           function(cb) {
-            me.i2c1.sendByte(this.ADDRESS, buffer[0], function(err, bytesWritten, buffer) {
+            me.i2c1.sendByte(me.ADDRESS, buffer[0], function(err, bytesWritten, buffer) {
               if (err) {
                   console.log("I2C Error sending command: " + cmd + ", error: " + err);
                   cb(err, "fail");
@@ -206,7 +206,7 @@ Oled.prototype._sendCommand = function () {
             });
           },
           function(cb) {
-            me.i2c1.sendByte(this.ADDRESS, buffer[1], function(err, bytesWritten, buffer) {
+            me.i2c1.sendByte(me.ADDRESS, buffer[1], function(err, bytesWritten, buffer) {
               if (err) {
                   console.log("I2C Error sending command: " + cmd + ", error: " + err);
                   cb(err, "fail");
@@ -221,7 +221,7 @@ Oled.prototype._sendCommand = function () {
         });
     } else if (2 == arguments.length) {
         console.log("..........cmd: " + cmd.toString(16));
-        this.i2c1.sendByte(this.ADDRESS, cmd, function(err, bytesWritten, buffer) {
+        this.i2c1.sendByte(me.ADDRESS, cmd, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", error: " + err);
                 callback(err, "fail");
