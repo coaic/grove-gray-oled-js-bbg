@@ -740,6 +740,9 @@ Oled.prototype.clearDisplay = function(sync) {
             });
           },
           function(cb) {
+            add in code to write zeroes directly to Graffics RAM
+          },
+          function(cb) {
             me._setDisplayModeNormal(function(err, results) {
               if (err)
                 cb(err, "_setDisplayModeNormal: " + err + " - " + results);
