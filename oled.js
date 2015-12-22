@@ -236,6 +236,21 @@ Oled.prototype._setDisplayModeNormal = function (cb) {
     this._sendCommand(this.NORMAL_DISPLAY, cb);
 }
 
+Oled.prototype.setDisplayModeNormal = function() {
+  var me = this,
+    promise = new Promise(function(resolve, reject) {
+      me._setDisplayModeNormal(function(err, results) {
+        if (err)
+          reject(new Error("Oled setDisplayModeNormal failed: " + err + "; results: " + results));
+        else
+          resolve(results);
+      })
+    });
+    
+  return promise;
+
+}
+
 Oled.prototype._setDisplayModeAllOn = function (cb) {
     this._sendCommand(0xA5, cb);
 }
@@ -714,14 +729,40 @@ Oled.prototype.turnOnDisplay = function() {
 
 Oled.prototype.clearDisplay = function(sync) {
   var me = this,
-      promise = new Promise(function(resolve, reject) {
-        me._clearDisplay(sync, function(err, results) {
-          if (err)
-            reject(new Error("Oled clearDisplay failed: " + err + "; results: " + results));
-          else
-            resolve(results);
-        });
-      });
+    promise = new Promise(function(resolve, reject) {
+      async.series([
+          function(cb) {
+            me._setRowAndColumn([ 0x00, 0x5F ], [ 0x08, 0x37 ], function(err, results) {
+              if (err)
+                cb(err, "_setRowAndColumn: " + err + " - " + results);
+              else
+                cb(err, "_setRowAndColumn: " + results);
+            });
+          },
+          function(cb) {
+            me._setDisplayModeNormal(function(err, results) {
+              if (err)
+                cb(err, "_setDisplayModeNormal: " + err + " - " + results);
+              else
+                cb(err, "_setDisplayModeNormal: " + results);
+            });
+          },
+          function(cb) {
+            me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {  // set remap
+              if (err)
+                cb(err, "SEG_REMAP: " + err + " - " + results);
+              else
+                cb(err, "SEG_REMAP: " + results);
+            });
+          }                    
+        ],  function(err, results) {
+              if (err)
+                reject(new Error("Oled clearDisplay failed: " + err + "; results: " + results));
+              else
+                resolve(results);
+            }
+        );
+    });
       
   return promise;
 }
@@ -781,18 +822,12 @@ Oled.prototype._setRowAndColumn = function(row, col, callback) {
 Oled.prototype.drawBitmap = function(pixels, sync) {
   var me = this,
     promise = new Promise(function(resolve, reject) {
-      me._setRowAndColumn([ 0x00, 0x5F ], [ 0x08, 0x37 ], function(err, results) {
-          if (err)
-            reject(new Error("Oled _setRowAndColumn Failed: " + err + "; results: " + results));
-          else
-            me._drawBitmap(pixels, sync, function(err, results) {
-              if (err)
-                reject(new Error("Oled drawBitmap failed: " + err + "; results: " + results));
-              else
-                resolve(results);
-            });
-        }
-      );
+      me._drawBitmap(pixels, sync, function(err, results) {
+        if (err)
+          reject(new Error("Oled drawBitmap failed: " + err + "; results: " + results));
+        else
+          resolve(results);
+      });
     });
 
   return promise;
@@ -871,16 +906,16 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
   // this.update(callback);
   // return;
   if (blen == 0) {
-    this.dirtyBytes = [];
+    me.dirtyBytes = [];
     callback(null, "success 0");
     return;
   }
   // check to see if this will even save time
-  if (blen > (this.buffer.length / 7)) {
+  if (blen > (me.buffer.length / 7)) {
     // just call regular update at this stage, saves on bytes sent
-    this._update(callback);
+    me._update(callback);
     // now that all bytes are synced, reset dirty state
-    this.dirtyBytes = [];
+    me.dirtyBytes = [];
 
   } else {
 
@@ -909,7 +944,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
     i = 0;
     byte = byteArray[i];
     row = Math.floor(byte / me.WIDTH);
-    col = Math.floor(byte % me.WIDTH);
+    col = Math.floor(byte % me.WIDTH) + 8;
 
     async.whilst(
       function() {
@@ -941,7 +976,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
                if (i < blen) {
                  byte = byteArray[i];
                  row = Math.floor(byte / me.WIDTH);
-                 col = Math.floor(byte % me.WIDTH);
+                 col = Math.floor(byte % me.WIDTH) + 8;
                }
                cbWhilst(null, results);
              }
