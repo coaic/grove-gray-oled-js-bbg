@@ -132,7 +132,7 @@ Oled.prototype._sendData = function (buffer, bufferLen, callback) {
 }
 
 Oled.prototype._sendDataByte = function (byte, callback) {
-  console.log("..........cmd: " + this.ADDRESS.toString(16) + "; byte: " + byte.toString(16));
+  console.log(".................data: " + this.ADDRESS.toString(16) + "; byte: " + byte.toString(16));
   this.i2c1.writeByte(this.ADDRESS, this.Data_Mode, byte, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending data byte: error: " + err);
@@ -972,6 +972,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
             }); 
           },
           function(cb) {
+            console.log("...............buffer[" + byte + "]: " + me.buffer[byte]);
             me._sendDataByte(me.buffer[byte], function(err, results) {
               if (err)
                 cb(err, "_sendDataByte: " + err + " - " + results);
