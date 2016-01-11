@@ -17,6 +17,7 @@ var Oled = function(opts) {
   this.i2c1,
   this.Command_Mode = 0x80,
   this.Data_Mode = 0x40,
+  this.VideoRAMSize = 48 * 96;
 
   // create command
   this.SETCOMMANDLOCK = 0xFD;
@@ -132,7 +133,7 @@ Oled.prototype._sendData = function (buffer, bufferLen, callback) {
 
 Oled.prototype._sendDataByte = function (byte, callback) {
   console.log("..........cmd: " + this.ADDRESS.toString(16) + "; byte: " + byte.toString(16));
-  this.i2c1.sendByte(this.ADDRESS, this.Data_Mode, byte, function(err, bytesWritten, buffer) {
+  this.i2c1.writeByte(this.ADDRESS, this.Data_Mode, byte, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending data byte: error: " + err);
                 callback(err, "fail");
@@ -743,11 +744,11 @@ Oled.prototype.clearDisplay = function(sync) {
             });
           },
           function(cb) {
-            // Write zeroes directly to Graffics RAM
-            var count = 48 * 96,
-                buf = new Buffer(count);
+            // Write zeroes to Graffics RAM
+            var buf = new Buffer(me.VideoRAMSize);
+            
             buf.fill(0x00);
-            me._sendData(buf, count, cb);
+            me._sendData(buf, buf.length, cb);
           },
           function(cb) {
             me._setDisplayModeNormal(function(err, results) {
