@@ -4,6 +4,103 @@ var i2c = require('i2c-bus'),
     Promise = require('promise');
 
 var Oled = function(opts) {
+  
+  this.BasicFont=[[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
+                  [0x00,0x00,0x5F,0x00,0x00,0x00,0x00,0x00],
+                  [0x00,0x00,0x07,0x00,0x07,0x00,0x00,0x00],
+                  [0x00,0x14,0x7F,0x14,0x7F,0x14,0x00,0x00],
+                  [0x00,0x24,0x2A,0x7F,0x2A,0x12,0x00,0x00],
+                  [0x00,0x23,0x13,0x08,0x64,0x62,0x00,0x00],
+                  [0x00,0x36,0x49,0x55,0x22,0x50,0x00,0x00],
+                  [0x00,0x00,0x05,0x03,0x00,0x00,0x00,0x00],
+                  [0x00,0x1C,0x22,0x41,0x00,0x00,0x00,0x00],
+                  [0x00,0x41,0x22,0x1C,0x00,0x00,0x00,0x00],
+                  [0x00,0x08,0x2A,0x1C,0x2A,0x08,0x00,0x00],
+                  [0x00,0x08,0x08,0x3E,0x08,0x08,0x00,0x00],
+                  [0x00,0xA0,0x60,0x00,0x00,0x00,0x00,0x00],
+                  [0x00,0x08,0x08,0x08,0x08,0x08,0x00,0x00],
+                  [0x00,0x60,0x60,0x00,0x00,0x00,0x00,0x00],
+                  [0x00,0x20,0x10,0x08,0x04,0x02,0x00,0x00],
+                  [0x00,0x3E,0x51,0x49,0x45,0x3E,0x00,0x00],
+                  [0x00,0x00,0x42,0x7F,0x40,0x00,0x00,0x00],
+                  [0x00,0x62,0x51,0x49,0x49,0x46,0x00,0x00],
+                  [0x00,0x22,0x41,0x49,0x49,0x36,0x00,0x00],
+                  [0x00,0x18,0x14,0x12,0x7F,0x10,0x00,0x00],
+                  [0x00,0x27,0x45,0x45,0x45,0x39,0x00,0x00],
+                  [0x00,0x3C,0x4A,0x49,0x49,0x30,0x00,0x00],
+                  [0x00,0x01,0x71,0x09,0x05,0x03,0x00,0x00],
+                  [0x00,0x36,0x49,0x49,0x49,0x36,0x00,0x00],
+                  [0x00,0x06,0x49,0x49,0x29,0x1E,0x00,0x00],
+                  [0x00,0x00,0x36,0x36,0x00,0x00,0x00,0x00],
+                  [0x00,0x00,0xAC,0x6C,0x00,0x00,0x00,0x00],
+                  [0x00,0x08,0x14,0x22,0x41,0x00,0x00,0x00],
+                  [0x00,0x14,0x14,0x14,0x14,0x14,0x00,0x00],
+                  [0x00,0x41,0x22,0x14,0x08,0x00,0x00,0x00],
+                  [0x00,0x02,0x01,0x51,0x09,0x06,0x00,0x00],
+                  [0x00,0x32,0x49,0x79,0x41,0x3E,0x00,0x00],
+                  [0x00,0x7E,0x09,0x09,0x09,0x7E,0x00,0x00],
+                  [0x00,0x7F,0x49,0x49,0x49,0x36,0x00,0x00],
+                  [0x00,0x3E,0x41,0x41,0x41,0x22,0x00,0x00],
+                  [0x00,0x7F,0x41,0x41,0x22,0x1C,0x00,0x00],
+                  [0x00,0x7F,0x49,0x49,0x49,0x41,0x00,0x00],
+                  [0x00,0x7F,0x09,0x09,0x09,0x01,0x00,0x00],
+                  [0x00,0x3E,0x41,0x41,0x51,0x72,0x00,0x00],
+                  [0x00,0x7F,0x08,0x08,0x08,0x7F,0x00,0x00],
+                  [0x00,0x41,0x7F,0x41,0x00,0x00,0x00,0x00],
+                  [0x00,0x20,0x40,0x41,0x3F,0x01,0x00,0x00],
+                  [0x00,0x7F,0x08,0x14,0x22,0x41,0x00,0x00],
+                  [0x00,0x7F,0x40,0x40,0x40,0x40,0x00,0x00],
+                  [0x00,0x7F,0x02,0x0C,0x02,0x7F,0x00,0x00],
+                  [0x00,0x7F,0x04,0x08,0x10,0x7F,0x00,0x00],
+                  [0x00,0x3E,0x41,0x41,0x41,0x3E,0x00,0x00],
+                  [0x00,0x7F,0x09,0x09,0x09,0x06,0x00,0x00],
+                  [0x00,0x3E,0x41,0x51,0x21,0x5E,0x00,0x00],
+                  [0x00,0x7F,0x09,0x19,0x29,0x46,0x00,0x00],
+                  [0x00,0x26,0x49,0x49,0x49,0x32,0x00,0x00],
+                  [0x00,0x01,0x01,0x7F,0x01,0x01,0x00,0x00],
+                  [0x00,0x3F,0x40,0x40,0x40,0x3F,0x00,0x00],
+                  [0x00,0x1F,0x20,0x40,0x20,0x1F,0x00,0x00],
+                  [0x00,0x3F,0x40,0x38,0x40,0x3F,0x00,0x00],
+                  [0x00,0x63,0x14,0x08,0x14,0x63,0x00,0x00],
+                  [0x00,0x03,0x04,0x78,0x04,0x03,0x00,0x00],
+                  [0x00,0x61,0x51,0x49,0x45,0x43,0x00,0x00],
+                  [0x00,0x7F,0x41,0x41,0x00,0x00,0x00,0x00],
+                  [0x00,0x02,0x04,0x08,0x10,0x20,0x00,0x00],
+                  [0x00,0x41,0x41,0x7F,0x00,0x00,0x00,0x00],
+                  [0x00,0x04,0x02,0x01,0x02,0x04,0x00,0x00],
+                  [0x00,0x80,0x80,0x80,0x80,0x80,0x00,0x00],
+                  [0x00,0x01,0x02,0x04,0x00,0x00,0x00,0x00],
+                  [0x00,0x20,0x54,0x54,0x54,0x78,0x00,0x00],
+                  [0x00,0x7F,0x48,0x44,0x44,0x38,0x00,0x00],
+                  [0x00,0x38,0x44,0x44,0x28,0x00,0x00,0x00],
+                  [0x00,0x38,0x44,0x44,0x48,0x7F,0x00,0x00],
+                  [0x00,0x38,0x54,0x54,0x54,0x18,0x00,0x00],
+                  [0x00,0x08,0x7E,0x09,0x02,0x00,0x00,0x00],
+                  [0x00,0x18,0xA4,0xA4,0xA4,0x7C,0x00,0x00],
+                  [0x00,0x7F,0x08,0x04,0x04,0x78,0x00,0x00],
+                  [0x00,0x00,0x7D,0x00,0x00,0x00,0x00,0x00],
+                  [0x00,0x80,0x84,0x7D,0x00,0x00,0x00,0x00],
+                  [0x00,0x7F,0x10,0x28,0x44,0x00,0x00,0x00],
+                  [0x00,0x41,0x7F,0x40,0x00,0x00,0x00,0x00],
+                  [0x00,0x7C,0x04,0x18,0x04,0x78,0x00,0x00],
+                  [0x00,0x7C,0x08,0x04,0x7C,0x00,0x00,0x00],
+                  [0x00,0x38,0x44,0x44,0x38,0x00,0x00,0x00],
+                  [0x00,0xFC,0x24,0x24,0x18,0x00,0x00,0x00],
+                  [0x00,0x18,0x24,0x24,0xFC,0x00,0x00,0x00],
+                  [0x00,0x00,0x7C,0x08,0x04,0x00,0x00,0x00],
+                  [0x00,0x48,0x54,0x54,0x24,0x00,0x00,0x00],
+                  [0x00,0x04,0x7F,0x44,0x00,0x00,0x00,0x00],
+                  [0x00,0x3C,0x40,0x40,0x7C,0x00,0x00,0x00],
+                  [0x00,0x1C,0x20,0x40,0x20,0x1C,0x00,0x00],
+                  [0x00,0x3C,0x40,0x30,0x40,0x3C,0x00,0x00],
+                  [0x00,0x44,0x28,0x10,0x28,0x44,0x00,0x00],
+                  [0x00,0x1C,0xA0,0xA0,0x7C,0x00,0x00,0x00],
+                  [0x00,0x44,0x64,0x54,0x4C,0x44,0x00,0x00],
+                  [0x00,0x08,0x36,0x41,0x00,0x00,0x00,0x00],
+                  [0x00,0x00,0x7F,0x00,0x00,0x00,0x00,0x00],
+                  [0x00,0x41,0x36,0x08,0x00,0x00,0x00,0x00],
+                  [0x00,0x02,0x01,0x01,0x02,0x01,0x00,0x00],
+                  [0x00,0x02,0x05,0x05,0x02,0x00,0x00,0x00]];
 
   this.HEIGHT = opts.height || 64;
   this.WIDTH = opts.width || 128;
@@ -96,17 +193,8 @@ var Oled = function(opts) {
 
 // Oled.prototype.init = function (cb) {
 Oled.prototype.init = function () {
-  var me = this,
-      promise = new Promise(function(resolve, reject) {
-        me._initialise(function(err, results) {
-          if (err)
-            reject(new Error("Oled init failed: " + err + "; results: " + results));
-          else
-            setTimeout(function() { resolve(results); }, 100);
-        })
-      });
-    
-  return promise;
+  var me = this;
+  me._initialise();
 }
 
 Oled.prototype._sendData = function (buffer, bufferLen, callback) {
@@ -140,145 +228,50 @@ Oled.prototype._sendDataByte = function (byte, callback) {
         });
 }
 
-Oled.prototype._sendCommand = function () {
-    var cmd,
-        buffer,
-        callback,
-        me = this;
-    if (3 == arguments.length) {
-        cmd = arguments[0];
-        buffer = arguments[1];
-        callback = arguments[2];
-    } else if (2 == arguments.length) {
-        cmd = arguments[0];
-        callback = arguments[1];
-    } else {
-        throw "I2C incorrect number of  argumnents to sendCommand";
-    }
-
-    if (3 == arguments.length && 1 == buffer.length) {
-        console.log("..........cmd: " + cmd.toString(16) + "; cmd: " + buffer[0].toString(16));
-        async.series([
-          function(cb) {
-            me.i2c1.sendByte(me.ADDRESS, cmd, function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          },
-          function(cb) {
-            me.i2c1.sendByte(me.ADDRESS, buffer[0], function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + buffer[0] + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          }
-          ], 
-          function(err, results) {
-                callback(err, results);
-        });
-    } else if (3 == arguments.length && buffer.length == 2) {
-        console.log("..........cmd: " + cmd.toString(16) + "; cmd: " + buffer[0].toString(16) + "; cmd: " + buffer[1].toString(16));
-        async.series([
-          function(cb) {
-            me.i2c1.sendByte(me.ADDRESS, cmd, function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          },
-          function(cb) {
-            me.i2c1.sendByte(me.ADDRESS, buffer[0], function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          },
-          function(cb) {
-            me.i2c1.sendByte(me.ADDRESS, buffer[1], function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          }
-          ],
-          function(err, results) {
-                callback(err, results);
-        });
-    } else if (2 == arguments.length) {
-        console.log("..........cmd: " + cmd.toString(16));
-        this.i2c1.sendByte(me.ADDRESS, cmd, function(err, bytesWritten, buffer) {
-            if (err) {
-                console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                callback(err, "fail");
-            } else {
-                callback(err, "success");
-            }
-        });
-    }
+Oled.prototype._sendCommand = function (cmd, trace) {
+    var me = this;
+    if (trace)
+      console.log("..........cmd: " + cmd.toString(16));
+    me.i2c1.sendByteSync(me.ADDRESS, cmd);
 }
 
-Oled.prototype._setDisplayModeNormal = function (cb) {
-    this._sendCommand(this.NORMAL_DISPLAY, cb);
+Oled.prototype._setDisplayModeNormal = function (trace) {
+    this._sendCommand(this.NORMAL_DISPLAY, trace);
 }
 
-Oled.prototype.setDisplayModeNormal = function() {
-  var me = this,
-    promise = new Promise(function(resolve, reject) {
-      me._setDisplayModeNormal(function(err, results) {
-        if (err)
-          reject(new Error("Oled setDisplayModeNormal failed: " + err + "; results: " + results));
-        else
-          resolve(results);
-      })
-    });
-    
-  return promise;
+Oled.prototype.setDisplayModeNormal = function(trace) {
+  var me = this;
 
+  me._setDisplayModeNormal(trace);
 }
 
-Oled.prototype._setDisplayModeAllOn = function (cb) {
-    this._sendCommand(0xA5, cb);
+Oled.prototype._setDisplayModeAllOn = function (trace) {
+    this._sendCommand(0xA5, trace);
 }
 
-Oled.prototype._setDisplayModeAllOff = function (cb) {
-    this._sendCommand(0xA6, cb);
+Oled.prototype._setDisplayModeAllOff = function (trace) {
+    this._sendCommand(0xA6, trace);
 }
 
-Oled.prototype._setDisplayModeInverse = function (cb) {
-    this._sendCommand(this.INVERT_DISPLAY, cb);
+Oled.prototype._setDisplayModeInverse = function (trace) {
+    this._sendCommand(this.INVERT_DISPLAY, trace);
 }
 
-Oled.prototype._setEnableScroll = function (on, cb) {
+Oled.prototype._setEnableScroll = function (on, trace) {
     if (on)
-        this._sendCommand(this.ACTIVATE_SCROLL, cb);
+        this._sendCommand(this.ACTIVATE_SCROLL, trace);
     else
-        this._sendCommand(this.DEACTIVATE_SCROLL, cb);
+        this._sendCommand(this.DEACTIVATE_SCROLL, trace);
 }
 
-Oled.prototype._setEnableDisplay = function (on, cb) {
+Oled.prototype._setEnableDisplay = function (on, trace) {
     if (on) 
-        this._sendCommand(this.DISPLAY_ON, cb);
+        this._sendCommand(this.DISPLAY_ON, trace);
     else
-        this._sendCommand(this.DISPLAY_OFF, cb);    
+        this._sendCommand(this.DISPLAY_OFF, trace);    
 }
 
-Oled.prototype._initialise = function(callback) {
+Oled.prototype._initialise = function(trace) {
 
   // sequence of bytes to initialise with
   // var initSeq = [
@@ -307,171 +300,38 @@ Oled.prototype._initialise = function(callback) {
   //   this._transfer('cmd', initSeq[i]);
   // }
   var me = this;
-    async.series([
-      function(cb) {
-          me.i2c1 = i2c.open(me.BUS1, function(err, results) {
-            if (err) 
-              cb(err, "open fail: " + err + " - " + results);
-            else
-              cb(err, "open success: " + results);
-          });
-      },
-      function(cb) {
-          me._sendCommand(me.SETCOMMANDLOCK, function(err, results) {   // Unlock OLED driver IC MCU interface from entering command. i.e: Accept commands
-            if (err)
-              cb(err, "SETCOMMANDLOCK: " + err + " - " + results);
-            else
-              cb(err, "SETCOMMANDLOCK: " + results);
-          });
-      },
-      function(cb) {
-          me._sendCommand(me.RESETPROTECTION, function(err, results) {
-            if (err)
-              cb(err, "RESETPROTECTION: " + err + " - " + results);
-            else
-              cb(err, "RESETPROTECTION: " + results);
-          });
-      },
-      function(cb) {
-          me._setEnableDisplay(false, function(err, results) {
-            if (err)
-              cb(err, "_setEnableDisplay: " + err + " - " + results);
-            else
-              cb(err, "_setEnableDisplay: " + results);
-          });
-      },
-      function(cb) {
-          me._sendCommand(me.SET_MULTIPLEX, new Buffer([ me.screenConfig['multiplex'] ]), function(err, results) {  // set multiplex ratio
-            if (err)
-              cb(err, "SET_MULTIPLEX: " + err + " - " + results);
-            else
-              cb(err, "SET_MULTIPLEX: " + results);
-          });         
-      },
-      function(cb) {
-          me._sendCommand(me.SET_START_LINE, new Buffer([ 0x00 ]), function(err, results) {  // set display start line
-            if (err)
-              cb(err, "SET_START_LINE: " + err + " - " + results);
-            else
-              cb(err, "SET_START_LINE: " + results);
-          });                  
-      },
-      function(cb) {
-          me._sendCommand(me.SET_DISPLAY_OFFSET, new Buffer([ 0x60 ]), function(err, results) {  // set display offset
-            if (err)
-              cb(err, "SET_DISPLAY_OFFSET: " + err + " - " + results);
-            else
-              cb(err, "SET_DISPLAY_OFFSET: " + results);
-          });              
-      },
-      function(cb) {
-          me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {  // set remap vertical mode
-            if (err)
-              cb(err, "SEG_REMAP: " + err + " - " + results);
-            else
-              cb(err, "SEG_REMAP: " + results);
-          });                      
-      },
-      function(cb) {
-          me._sendCommand(me.SET_VDD_INTERNAL, new Buffer([ 0x01 ]), function(err, results) {  // set vdd internal
-            if (err)
-              cb(err, "SET_VDD_INTERNAL: " + err + " - " + results);
-            else
-              cb(err, "SET_VDD_INTERNAL: " + results);
-          });                
-      },
-      function(cb) {
-          me._sendCommand(me.SET_CONTRAST, new Buffer([ 0x53 ]), function(err, results) {  // set contrast
-            if (err)
-              cb(err, "SET_CONTRAST: " + err + " - " + results);
-            else
-              cb(err, "SET_CONTRAST: " + results);
-          });                   
-      },
-      function(cb) {
-          me._sendCommand(me.SET_PHASE_LENGTH, new Buffer([ 0x51 ]), function(err, results) {  // set phase length
-            if (err)
-              cb(err, "SET_PHASE_LENGTH: " + err + " - " + results);
-            else
-              cb(err, "SET_PHASE_LENGTH: " + results);
-          });                
-      },
-      function(cb) {
-          me._sendCommand(me.SET_DISPLAY_CLOCK_DIVIDE_RATIO, new Buffer([ 0x01 ]), function(err, results) {  // set display clock divide ratio/oscillator frequency
-            if (err)
-              cb(err, "SET_DISPLAY_CLOCK_DIVIDE_RATIO: " + err + " - " + results);
-            else
-              cb(err, "SET_DISPLAY_CLOCK_DIVIDE_RATIO: " + results);
-          });    
-      },
-      function(cb) {
-          me._sendCommand(me.SET_LINEAR_LUT, function(err, results) {  // set linear gray scale
-            if (err)
-              cb(err, "SET_LINEAR_LUT: " + err + " - " + results);
-            else
-              cb(err, "SET_LINEAR_LUT: " + results);
-          });                          
-      },
-      function(cb) {
-          me._sendCommand(me.SET_PRECHARGE_VOLTAGE, new Buffer([ me.VCOMH ]), function(err, results) {  // set pre charge voltage to VCOMH
-            if (err)
-              cb(err, "SET_PRECHARGE_VOLTAGE: " + err + " - " + results);
-            else
-              cb(err, "SET_PRECHARGE_VOLTAGE: " + results);
-          });          
-      },
-      function(cb) {
-          me._sendCommand(me.SET_VCOMH, new Buffer([ me.POINT_86_VCC ]), function(err, results) {  // set VCOMh .86 x Vcc
-            if (err)
-              cb(err, "SET_VCOMH: " + err + " - " + results);
-            else
-              cb(err, "SET_VCOMH: " + results);
-          });                
-      },
-      function(cb) {
-          me._sendCommand(me.SET_SECOND_PRECHARGE, new Buffer([ 0x01 ]), function(err, results) {  // set second pre charge period
-            if (err)
-              cb(err, "SET_SECOND_PRECHARGE: " + err + " - " + results);
-            else
-              cb(err, "SET_SECOND_PRECHARGE: " + results);
-          });            
-      },
-      function(cb) {
-          me._sendCommand(me.SET_ENABLE_SECOND_PRECHARGE, new Buffer([ me.INTERNAL_VSL ]), function(err, results) {  // enable second pre charge and internal VSL
-            if (err)
-              cb(err, "SET_ENABLE_SECOND_PRECHARGE: " + err + " - " + results);
-            else
-              cb(err, "SET_ENABLE_SECOND_PRECHARGE: " + results);
-          }); 
-      },
-  
-      function(cb) {
-          me._setDisplayModeNormal(function(err, results) {  
-            if (err)
-              cb(err, "_setDisplayModeNormal: " + err + " - " + results);
-            else
-              cb(err, "_setDisplayModeNormal: " + results);
-          });
-      },
-      function(cb) {
-          me._setEnableScroll(false, function(err, results) {  
-            if (err)
-              cb(err, "_setEnableScroll: " + err + " - " + results);
-            else
-              cb(err, "_setEnableScroll: " + results);
-          });
-      },
-      function(cb) {
-          me._setEnableDisplay(true, function(err, results) {  
-            if (err)
-              cb(err, "_setEnableDisplay: " + err + " - " + results);
-            else
-              cb(err, "_setEnableDisplay: " + results);
-          });
-      }
-  ], function(err, results) {
-        callback(err, results);
-  });
+  me.i2c1 = i2c.open(me.BUS1);
+  me._sendCommand(me.SETCOMMANDLOCK, true);
+  me._sendCommand(me.RESETPROTECTION, true);
+  me._setEnableDisplay(false, true);
+  me._sendCommand(me.SET_MULTIPLEX, true);
+  me._sendCommand(me.screenConfig['multiplex'], true);
+  me._sendCommand(me.SET_START_LINE, true);
+  me._sendCommand(0x00, true);
+  me._sendCommand(me.SET_DISPLAY_OFFSET, true);
+  me._sendCommand(0x60, true);
+  me._sendCommand(me.SEG_REMAP, true);
+  me._sendCommand(0x46, true);
+  me._sendCommand(me.SET_VDD_INTERNAL, true);
+  me._sendCommand(0x01, true);
+  me._sendCommand(me.SET_CONTRAST, true);
+  me._sendCommand(0x53, true);
+  me._sendCommand(me.SET_PHASE_LENGTH, true);
+  me._sendCommand(0x51, true);
+  me._sendCommand(me.SET_DISPLAY_CLOCK_DIVIDE_RATIO, true);
+  me._sendCommand(0x01, true);
+  me._sendCommand(me.SET_LINEAR_LUT, true);
+  me._sendCommand(me.SET_PRECHARGE_VOLTAGE, true);
+  me._sendCommand(me.VCOMH, true);
+  me._sendCommand(me.SET_VCOMH, true);
+  me._sendCommand(me.POINT_86_VCC , true);
+  me._sendCommand(me.SET_SECOND_PRECHARGE, true);
+  me._sendCommand(0x01, true);
+  me._sendCommand(me.SET_ENABLE_SECOND_PRECHARGE, true);
+  me._sendCommand(me.INTERNAL_VSL, true);
+  me._setDisplayModeNormal(true);
+  me._setEnableScroll(false, true);
+  me._setEnableDisplay(true, true);
 }
 
 // // writes both commands and data buffers to this device

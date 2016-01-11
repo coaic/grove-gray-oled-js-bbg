@@ -1,3 +1,4 @@
+"use strict";
 var 
     Promise = require('promise'),
     res = require("./res"),
