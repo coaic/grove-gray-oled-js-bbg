@@ -5,8 +5,8 @@ var i2c = require('i2c-bus'),
 
 var Oled = function(opts) {
 
-  this.HEIGHT = opts.height || 64;
-  this.WIDTH = opts.width || 128;
+  this.HEIGHT = opts.height || 128; // Also try 96; 128 is the GDRAM dimension
+  this.WIDTH = opts.width || 128;   // Also try 96; 128 is the GDRAM dimension
   this.ADDRESS = opts.address || 0x3C;
   this.PROTOCOL = 'I2C';
   
@@ -17,7 +17,7 @@ var Oled = function(opts) {
   this.i2c1,
   this.Command_Mode = 0x80,
   this.Data_Mode = 0x40,
-  this.VideoRAMSize = 48 * 96;
+  this.VideoRAMSize = 128 * 128;
 
   // create command
   this.SETCOMMANDLOCK = 0xFD;
@@ -808,6 +808,7 @@ Oled.prototype.invertDisplay = function(bool) {
 Oled.prototype._setRowAndColumn = function(row, col, callback) {
   var me = this;
   
+  console.log("............_setRowAndColumn - row[" + row[0] + ", " + row[1] + "], col[" + col[0] + ", " + col[1] + "]");
   async.series([
       function(cb) {
         me._sendCommand(me.ROW_ADDR, new Buffer(row), function(err, results) {  // set start and end row address
@@ -854,6 +855,7 @@ Oled.prototype._drawBitmap = function(pixels, sync, callback) {
     x = Math.floor(i % this.WIDTH);
     y = Math.floor(i / this.WIDTH);
 
+    console.log("........_drawBitmap i: " + i + " x:" + x + " y:" + y + " pixels[" + i + "]:" + pixels[i] + " - this.dirtyBytes.length:" + this.dirtyBytes.length);
     this._drawPixel([x, y, pixels[i]], false);
   }
 
@@ -872,7 +874,8 @@ Oled.prototype._drawPixel = function(pixels, sync) {
   pixels.forEach(function(el) {
     // return if the pixel is out of range
     var x = el[0], y = el[1], color = el[2];
-    if (x > this.WIDTH || y > this.HEIGHT) return;
+    if (x > this.WIDTH || y > this.HEIGHT) 
+      return;
 
     // thanks, Martin Richards.
     // I wanna can this, this tool is for devs who get 0 indexes
@@ -954,7 +957,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
     // iterate through dirty bytes
     i = 0;
     byte = byteArray[i];
-    row = Math.floor(byte / me.WIDTH);
+    row = Math.floor(byte / me.HEIGHT);
     col = Math.floor(byte % me.WIDTH) + 8;
 
     async.whilst(
@@ -988,7 +991,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
                if (i < blen) {
                  byte = byteArray[i];
                  row = Math.floor(byte / me.WIDTH);
-                 col = Math.floor(byte % me.WIDTH) + 8;
+                 col = Math.floor(byte % me.HEIGHT) + 8;
                }
                cbWhilst(null, results);
              }
