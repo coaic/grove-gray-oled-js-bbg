@@ -5,14 +5,17 @@ var i2c = require('i2c-bus'),
 
 var Oled = function(opts) {
 
-  this.HEIGHT = opts.height || 128; // Also try 96; 128 is the GDRAM dimension
-  this.WIDTH = opts.width || 128;   // Also try 96; 128 is the GDRAM dimension
+  this.HEIGHT = opts.height || 96; // Also try 96; 128 is the GDRAM dimension
+  this.WIDTH = opts.width || 96;   // Also try 96; 128 is the GDRAM dimension
   this.ADDRESS = opts.address || 0x3C;
   this.PROTOCOL = 'I2C';
   
   this.BUS0 = 0,
   this.BUS1 = 1,
   this.BUS2 = 2,
+  
+  this.grayH = 0xF0,
+  this.grayL = 0x0F,
 
   this.i2c1,
   this.Command_Mode = 0x80,
@@ -65,7 +68,7 @@ var Oled = function(opts) {
   this.cursor_y = 0;
 
   // new blank buffer
-  this.buffer = new Buffer((this.WIDTH * this.HEIGHT) / 8);
+  this.buffer = new Buffer((this.WIDTH * this.HEIGHT) / 2);
   this.buffer.fill(0x00);
 
   this.dirtyBytes = [];
@@ -77,6 +80,11 @@ var Oled = function(opts) {
       'coloffset': 0
     },
     '128x64': {
+      'multiplex': 0x5F,
+      'compins': 0x12,
+      'coloffset': 0
+    },
+    '96x96': {
       'multiplex': 0x5F,
       'compins': 0x12,
       'coloffset': 0
@@ -368,7 +376,7 @@ Oled.prototype._initialise = function(callback) {
           });              
       },
       function(cb) {
-          me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {  // set remap vertical mode
+          me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {  // set remap horizontal mode
             if (err)
               cb(err, "SEG_REMAP: " + err + " - " + results);
             else
@@ -759,7 +767,7 @@ Oled.prototype.clearDisplay = function(sync) {
             });
           },
           function(cb) {
-            me._sendCommand(me.SEG_REMAP, new Buffer([ 0x42 ]), function(err, results) {  // set remap horizontal mode
+            me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {  // set remap virtical mode
               if (err)
                 cb(err, "SEG_REMAP: " + err + " - " + results);
               else
@@ -848,19 +856,59 @@ Oled.prototype.drawBitmap = function(pixels, sync) {
 // draw an image pixel array on the screen
 Oled.prototype._drawBitmap = function(pixels, sync, callback) {
   var immed = (typeof sync === 'undefined') ? true : sync;
-  var x, y,
-      pixelArray = [];
+  var i, j, x, y,
+      pixel_index,
+      buffer_index,
+      chunk,
+      color,
+      me = this;
+      // pixelArray = [];
 
-  for (var i = 0; i < pixels.length; i++) {
-    x = Math.floor(i % this.WIDTH);
-    y = Math.floor(i / this.WIDTH);
+  // for (i = 0; i < pixels.length; i++) {
+  //   x = Math.floor(i % this.WIDTH);
+  //   y = Math.floor(i / this.WIDTH);
 
-    console.log("........_drawBitmap i: " + i + " x:" + x + " y:" + y + " pixels[" + i + "]:" + pixels[i] + " - this.dirtyBytes.length:" + this.dirtyBytes.length);
-    this._drawPixel([x, y, pixels[i]], false);
+  //   console.log("........_drawBitmap i: " + i + " x:" + x + " y:" + y + " pixels[" + i + "]:" + pixels[i] + " - this.dirtyBytes.length:" + this.dirtyBytes.length);
+  //   this._drawPixel([x, y, pixels[i]], false);
+  // }
+  
+  pixel_index = 0;
+  buffer_index = 0;
+  for (i = 0; i < pixels.length; i++, pixel_index += 8) {
+    chunk = pixels[i];
+    for (j = 0; j < 8; j++, pixel_index++) {
+      x = Math.floor(pixel_index % this.WIDTH);
+      y = Math.floor(pixel_index / this.WIDTH);
+      color = 0;
+      if ((chunk << j) & 0x80) {
+        if (j % 2) {
+          color = me.grayH;
+          me.buffer[buffer_index] |= me.grayH;
+        } else {
+          color = me.grayL;
+          me.buffer[buffer_index] |= me.grayL;
+          if (me.dirtyBytes.indexOf(buffer_index) === -1)
+            me.dirtyBytes.push(buffer_index);
+        }
+      }
+      if (j % 2) 
+        buffer_index++;
+//      me._drawPixel([x, y, color], false);
+      
+    }
   }
+  
+  // for (i = 0; i < pixels.length; i++) {
+  //   if (pixels[i] != me.buffer[i]) {
+  //     me.buffer[i] = pixels[i];
+  //     if (me.dirtyBytes.indexOf(i) === -1) {
+  //       me.dirtyBytes.push(i);
+  //     }
+  //   }
+  // }
 
   if (immed) {
-    this._updateDirtyBytes(this.dirtyBytes, callback);
+    me._updateDirtyBytes(me.dirtyBytes, callback);
   }
 }
 
@@ -881,19 +929,21 @@ Oled.prototype._drawPixel = function(pixels, sync) {
     // I wanna can this, this tool is for devs who get 0 indexes
     //x -= 1; y -=1;
     var byte = 0,
-        row = Math.floor(y / 8),
+        // row = Math.floor(y / 8),
+        row = y,
         rowShift = 0x01 << (y - 8 * row);
 
     // is the pixel on the first row of the page?
     (row == 0) ? byte = x : byte = x + (this.WIDTH * row);
 
     // colors! Well, monochrome.
-    if (color === 'BLACK' || color === 0) {
-      this.buffer[byte] &= ~rowShift;
-    }
-    if (color === 'WHITE' || color > 0) {
-      this.buffer[byte] |= rowShift;
-    }
+    // if (color === 'BLACK' || color === 0) {
+    //   this.buffer[byte] &= ~rowShift;
+    // }
+    // if (color === 'WHITE' || color > 0) {
+    //   this.buffer[byte] |= rowShift;
+    // }
+    this.buffer[byte] |= color;
 
     // push byte to dirty if not already there
     if (this.dirtyBytes.indexOf(byte) === -1) {
