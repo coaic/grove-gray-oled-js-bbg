@@ -352,33 +352,6 @@ Oled.prototype._setEnableDisplay = function (on, cb) {
 }
 
 Oled.prototype._initialise = function(callback) {
-
-  // sequence of bytes to initialise with
-  // var initSeq = [
-  //   this.DISPLAY_OFF,
-  //   this.SET_DISPLAY_CLOCK_DIV, 0x80,
-  //   this.SET_MULTIPLEX, this.screenConfig.multiplex, // set the last value dynamically based on screen size requirement
-  //   this.SET_DISPLAY_OFFSET, 0x00, // sets offset pro to 0
-  //   this.SET_START_LINE,
-  //   this.CHARGE_PUMP, 0x14, // charge pump val
-  //   this.MEMORY_MODE, 0x00, // 0x0 act like ks0108
-  //   this.SEG_REMAP, // screen orientation
-  //   this.COM_SCAN_DEC, // screen orientation change to INC to flip
-  //   this.SET_COM_PINS, this.screenConfig.compins, // com pins val sets dynamically to match each screen size requirement
-  //   this.SET_CONTRAST, 0x8F, // contrast val
-  //   this.SET_PRECHARGE, 0xF1, // precharge val
-  //   this.SET_VCOM_DETECT, 0x40, // vcom detect
-  //   this.DISPLAY_ALL_ON_RESUME,
-  //   this.NORMAL_DISPLAY,
-  //   this.DISPLAY_ON
-  // ];
-
-  // var i, initSeqLen = initSeq.length;
-
-  // // write init seq commands
-  // for (i = 0; i < initSeqLen; i ++) {
-  //   this._transfer('cmd', initSeq[i]);
-  // }
   var me = this;
     async.series([
       function(cb) {
@@ -547,71 +520,6 @@ Oled.prototype._initialise = function(callback) {
   });
 }
 
-// // writes both commands and data buffers to this device
-// Oled.prototype._transfer = function(type, val, fn) {
-//   var control;
-//   if (type === 'data') {
-//     control = 0x40;
-//   } else if (type === 'cmd') {
-//     control = 0x00;
-//   } else {
-//     return;
-//   }
-
-//   // send control and actual val
-//   // this.board.io.i2cWrite(this.ADDRESS, [control, val]);
-//   this.wire.writeByte(control, function(err) {
-//     this.wire.writeByte(val, function(err) {
-//       fn();
-//     });
-//   });
-// }
-
-// // read a byte from the oled
-// Oled.prototype._readI2C = function(fn) {
-//   this.wire.readByte(function(err, data) {
-//     // result is single byte
-//     fn(data);
-//   });
-// }
-
-// // sometimes the oled gets a bit busy with lots of bytes.
-// // Read the response byte to see if this is the case
-// Oled.prototype._waitUntilReady = function(callback) {
-//   var done,
-//       oled = this;
-
-//   function tick(callback) {
-//     oled._readI2C(function(byte) {
-//       // read the busy byte in the response
-//       busy = byte >> 7 & 1;
-//       if (!busy) {
-//         // if not busy, it's ready for callback
-//         callback();
-//       } else {
-//         console.log('I\'m busy!');
-//         setTimeout(tick, 0);
-//       }
-//     });
-//   };
-
-//   setTimeout(tick(callback), 0);
-// }
-
-// Oled.prototype._waitCallbackComplete = function(tasks, callback) {
-//   var done,
-//       busy = true,
-//       oled = this;
-      
-//   function tick(callback) {
-//     tasks
-//     if (!busy) {
-      
-//     } else {
-//       console.log("....Waiting for callback");
-//     }
-// }
-
 // set starting position of a text string on the oled
 Oled.prototype.setCursor = function(x, y) {
   this.cursor_x = x;
@@ -729,31 +637,6 @@ Oled.prototype._findCharBuf = function(font, c) {
 
 // send the entire framebuffer to the oled
 Oled.prototype._update = function(callback) {
-  // // wait for oled to be ready
-  // this._waitUntilReady(function() {
-  //   // set the start and endbyte locations for oled display update
-  //   var displaySeq = [
-  //     this.COLUMN_ADDR,
-  //     this.screenConfig.coloffset,
-  //     this.screenConfig.coloffset + this.WIDTH - 1, // column start and end address
-  //     this.PAGE_ADDR, 0, (this.HEIGHT / 8) - 1 // page start and end address
-  //   ];
-
-  //   var displaySeqLen = displaySeq.length,
-  //       bufferLen = this.buffer.length,
-  //       i, v;
-
-  //   // send intro seq
-  //   for (i = 0; i < displaySeqLen; i += 1) {
-  //     this._transfer('cmd', displaySeq[i]);
-  //   }
-
-  //   // write buffer data
-  //   for (v = 0; v < bufferLen; v += 1) {
-  //     this._transfer('data', this.buffer[v]);
-  //   }
-
-  // }.bind(this));
   var me = this,
       localAddressMode = me.addressMode;
       
