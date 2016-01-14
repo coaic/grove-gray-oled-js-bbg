@@ -376,7 +376,7 @@ Oled.prototype._initialise = function(callback) {
           });              
       },
       function(cb) {
-          me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {  // set remap horizontal mode
+          me._sendCommand(me.SEG_REMAP, new Buffer([ 0x42 ]), function(err, results) {  // set remap horizontal mode
             if (err)
               cb(err, "SEG_REMAP: " + err + " - " + results);
             else
@@ -767,7 +767,7 @@ Oled.prototype.clearDisplay = function(sync) {
             });
           },
           function(cb) {
-            me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {  // set remap virtical mode
+            me._sendCommand(me.SEG_REMAP, new Buffer([ 0x42 ]), function(err, results) {  // set remap virtical mode
               if (err)
                 cb(err, "SEG_REMAP: " + err + " - " + results);
               else
