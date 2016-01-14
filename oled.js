@@ -75,6 +75,7 @@ var Oled = function(opts) {
   
   this.debugCmdLogEnable = false;
   this.debugDataLogEnable = true;
+  this.debugScreenBufferLogEnable = true;
 
   // new blank buffer
   this.buffer = new Buffer((this.WIDTH * this.HEIGHT) / 2);
@@ -127,6 +128,32 @@ Oled.prototype.debugDataLog = function(logLine) {
     console.log(logLine);
   }
 } 
+
+Oled.prototype.debugScreenBufferLog = function(buffer) {
+  var i, j,
+      logLine,
+      padding,
+      byte,
+      len = buffer.length;
+      
+  for (i = 0; i < len; i += 32) {
+    if (i < 10) {
+      padding = "   ";
+    } else if (i < 100) {
+      padding = "  ";
+    } else if (i < 1000) {
+      padding = " ";
+    } else {
+      padding = "";
+    }
+    logLine = padding + i.toString(10) + ": "
+    for (j = i; j < (i + 32); j++) {
+      byte = buffer[j]
+      logLine += " 0x" + (byte < 16 ? "0" + byte.toString(16) : byte.toString(16));
+    }
+    console.log(logLine);
+  }
+}
 
 // Oled.prototype.init = function (cb) {
 Oled.prototype.init = function () {
@@ -655,6 +682,8 @@ Oled.prototype._update = function(callback) {
   var me = this,
       localAddressMode = me.addressMode;
       
+  me.debugScreenBufferLog(me.buffer);
+  
   async.series([
       function(cb) {
         me._setHorizontalMode(function(err, results) {
