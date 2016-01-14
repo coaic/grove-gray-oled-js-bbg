@@ -1,4 +1,7 @@
 "use strict";
+//
+// Use Arduino CPP code as a model per: https://github.com/Seeed-Studio/OLED_Display_96X96
+//
 var i2c = require('i2c-bus'),
     async = require('async'),
     Promise = require('promise');
@@ -14,13 +17,16 @@ var Oled = function(opts) {
   this.BUS1 = 1,
   this.BUS2 = 2,
   
+  this.VERTICAL_MODE = 0,
+  this.HORIZONTAL_MODE = 1,
+  
   this.grayH = 0xF0,
   this.grayL = 0x0F,
 
   this.i2c1,
   this.Command_Mode = 0x80,
   this.Data_Mode = 0x40,
-  this.VideoRAMSize = 128 * 128;
+  this.VideoRAMSize = 48 * 96;
 
   // create command
   this.SETCOMMANDLOCK = 0xFD;
@@ -72,6 +78,8 @@ var Oled = function(opts) {
   this.buffer.fill(0x00);
 
   this.dirtyBytes = [];
+  
+  this.addressMode = this.VERTICAL_MODE;
 
   var config = {
     '128x32': {
@@ -244,8 +252,62 @@ Oled.prototype._sendCommand = function () {
     }
 }
 
+Oled.prototype._setContrastLevel = function (contrastLevel, cb) {
+  this._sendCommand(this.SET_CONTRAST, new Buffer([ contrastLevel ]), cb);
+}
+
+Oled.prototype._setGrayLevel = function (grayLevel, cb) {
+  this.grayH = (grayLevel << 4) & 0xF0;
+  this.grayL = grayLevel & 0x0F;
+  setTimeout(0, function() { cb(null, "success"); });
+}
+
+Oled.prototype._setHorizontalMode = function (callback) {
+  var me = this;
+
+  async.series([
+    function(cb) {
+      me._sendCommand(me.SEG_REMAP, new Buffer([ 0x42 ]), function(err, results) {
+        if (err) {
+          console.log("Oled _setHorizontalMode failed: " + err);
+          cb(err, results);
+        } else {
+          me.addressMode = me.HORIZONTAL_MODE;
+          cb(err, results);
+        }
+      });
+    },
+    function(cb) {
+      me._setRowAndColumn([ 0x00, 0x5F ], [ 0x08, 0x37 ], function(err, results) {
+        if (err) {
+          console.log("Oled _setHorizontalMode failed: " + err);
+          cb(err, results);
+        } else {
+          cb(err, results);
+        }
+      });
+    }],
+      function(err, results) {
+        callback(err, results);
+    });
+}
+
+Oled.prototype._setVerticalMode = function (cb) {
+  var me = this;
+  
+  me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {
+    if (err) {
+      console.log("Oled _setHorizontalMode failed: " + err);
+      cb(err, results);
+    } else {
+      me.addressMode = me.VERTICAL_MODE;
+      cb(err, results);
+    }
+  });
+}
+
 Oled.prototype._setDisplayModeNormal = function (cb) {
-    this._sendCommand(this.NORMAL_DISPLAY, cb);
+  this._sendCommand(this.NORMAL_DISPLAY, cb);
 }
 
 Oled.prototype.setDisplayModeNormal = function() {
@@ -376,11 +438,11 @@ Oled.prototype._initialise = function(callback) {
           });              
       },
       function(cb) {
-          me._sendCommand(me.SEG_REMAP, new Buffer([ 0x42 ]), function(err, results) {  // set remap horizontal mode
+          me._setVerticalMode( function(err, results) {  // set remap horizontal mode
             if (err)
-              cb(err, "SEG_REMAP: " + err + " - " + results);
+              cb(err, "_setVerticalMode: " + err + " - " + results);
             else
-              cb(err, "SEG_REMAP: " + results);
+              cb(err, "_setVerticalMode: " + results);
           });                      
       },
       function(cb) {
@@ -692,14 +754,16 @@ Oled.prototype._update = function(callback) {
   //   }
 
   // }.bind(this));
-  var me = this;
+  var me = this,
+      localAddressMode = me.addressMode;
+      
   async.series([
       function(cb) {
-        me._sendCommand(me.COLUMN_ADDR, new Buffer([ me.screenConfig.coloffset, me.screenConfig.coloffset + me.WIDTH - 1 ]), function(err, results) {
+        me._setHorizontalMode(function(err, results) {
             if (err)
-              cb(err, "COLUMN_ADDR: " + err + " - " + results);
+              cb(err, "_setHorizontalMode: " + err + " - " + results);
             else
-              cb(err, "COLUMN_ADDR: " + results);
+              cb(err, "_setHorizontalMode: " + results);
           }); 
       },
       function(cb) {
@@ -709,6 +773,18 @@ Oled.prototype._update = function(callback) {
             else
               cb(err, "_sendData: " + results);
           }); 
+      },
+      function(cb) {
+        if (localAddressMode == me.HORIZONTAL) {
+          setTimeout(0, function() { cb(null, "success"); });
+        } else {
+          me._setVerticalMode(function(err, results) {
+            if (err)
+              cb(err, "_setVerticalMode: " + err + " - " + results);
+            else
+              cb(err, "_setVerticalMode: " + results);
+          });
+        }
       }
     ], function(err, results) {
           callback(err, results);
@@ -744,7 +820,7 @@ Oled.prototype.clearDisplay = function(sync) {
     promise = new Promise(function(resolve, reject) {
       async.series([
           function(cb) {
-            me._setRowAndColumn([ 0x00, 0x5F ], [ 0x08, 0x37 ], function(err, results) {
+            me._setHorizontalMode(function(err, results) {
               if (err)
                 cb(err, "_setRowAndColumn: " + err + " - " + results);
               else
@@ -767,11 +843,11 @@ Oled.prototype.clearDisplay = function(sync) {
             });
           },
           function(cb) {
-            me._sendCommand(me.SEG_REMAP, new Buffer([ 0x42 ]), function(err, results) {  // set remap virtical mode
+            me._setVerticalMode(function(err, results) {  // set remap virtical mode
               if (err)
-                cb(err, "SEG_REMAP: " + err + " - " + results);
+                cb(err, "_setVerticalMode: " + err + " - " + results);
               else
-                cb(err, "SEG_REMAP: " + results);
+                cb(err, "_setVerticalMode: " + results);
             });
           }                    
         ],  function(err, results) {
@@ -862,16 +938,7 @@ Oled.prototype._drawBitmap = function(pixels, sync, callback) {
       chunk,
       color,
       me = this;
-      // pixelArray = [];
 
-  // for (i = 0; i < pixels.length; i++) {
-  //   x = Math.floor(i % this.WIDTH);
-  //   y = Math.floor(i / this.WIDTH);
-
-  //   console.log("........_drawBitmap i: " + i + " x:" + x + " y:" + y + " pixels[" + i + "]:" + pixels[i] + " - this.dirtyBytes.length:" + this.dirtyBytes.length);
-  //   this._drawPixel([x, y, pixels[i]], false);
-  // }
-  
   pixel_index = 0;
   buffer_index = 0;
   for (i = 0; i < pixels.length; i++, pixel_index += 8) {
@@ -897,15 +964,6 @@ Oled.prototype._drawBitmap = function(pixels, sync, callback) {
       
     }
   }
-  
-  // for (i = 0; i < pixels.length; i++) {
-  //   if (pixels[i] != me.buffer[i]) {
-  //     me.buffer[i] = pixels[i];
-  //     if (me.dirtyBytes.indexOf(i) === -1) {
-  //       me.dirtyBytes.push(i);
-  //     }
-  //   }
-  // }
 
   if (immed) {
     me._updateDirtyBytes(me.dirtyBytes, callback);
