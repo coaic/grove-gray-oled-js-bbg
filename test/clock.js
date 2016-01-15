@@ -23,7 +23,7 @@ Date.prototype.format = function(fmt) { //author: meizz
 
 // wiringPiSetup();
 var screen = new OLED({
-    width: 96,
+    width: 55,
     height: 96,
     // canvas: res.splash,
     fps: 0

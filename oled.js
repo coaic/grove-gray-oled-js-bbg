@@ -9,7 +9,7 @@ var i2c = require('i2c-bus'),
 var Oled = function(opts) {
 
   this.HEIGHT = opts.height || 96; // Also try 96; 128 is the GDRAM dimension
-  this.WIDTH = opts.width || 96;   // Also try 96; 128 is the GDRAM dimension
+  this.WIDTH = opts.width || 55;   // Also try 96; 128 is the GDRAM dimension
   this.ADDRESS = opts.address || 0x3C;
   this.PROTOCOL = 'I2C';
   
@@ -78,7 +78,7 @@ var Oled = function(opts) {
   this.debugScreenBufferLogEnable = false;
 
   // new blank buffer
-  this.buffer = new Buffer((this.WIDTH * this.HEIGHT) / 2);
+  this.buffer = new Buffer(this.VideoRAMSize);
   this.buffer.fill(0x00);
 
   this.dirtyBytes = [];
@@ -96,10 +96,10 @@ var Oled = function(opts) {
       'compins': 0x12,
       'coloffset': 0
     },
-    '96x96': {
+    '55x96': {
       'multiplex': 0x5F,
       'compins': 0x12,
-      'coloffset': 0
+      'coloffset': 8
     },
     '96x16': {
       'multiplex': 0xA8,
@@ -944,32 +944,12 @@ Oled.prototype._drawPixel = function(pixels, sync) {
   }
 }
 
-// looks at dirty bytes, and sends the updated bytes to the display
-Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
+Oled.prototype._processDirtyBytes = function(byteArray, callback) {
   var blen = byteArray.length, i,
-      displaySeq = [],
-      byte, row, col,
-      me = this;
-      
-  if (arguments.length != 2) 
-    throw new Error("Callback argument not provided");
-
-  // this.update(callback);
-  // return;
-  if (blen == 0) {
-    me.dirtyBytes = [];
-    callback(null, "success 0");
-    return;
-  }
-  // check to see if this will even save time
-  if (blen > (me.buffer.length / 7)) {
-    // just call regular update at this stage, saves on bytes sent
-    me._update(callback);
-    // now that all bytes are synced, reset dirty state
-    me.dirtyBytes = [];
-
-  } else {
-
+    byte, row, col,
+    me = this,
+    localAddressMode = me.addressMode;
+    
     // // iterate through dirty bytes
     // for (var i = 0; i < blen; i += 1) {
 
@@ -994,51 +974,107 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
     // iterate through dirty bytes
     i = 0;
     byte = byteArray[i];
-    row = Math.floor(byte / me.HEIGHT);
-    col = Math.floor(byte % me.WIDTH) + 8;
+    row = Math.floor(byte % me.HEIGHT);
+    col = Math.floor(byte / me.HEIGHT) + 8;
 
-    async.whilst(
-      function() {
-        return i < blen;
+    async.series([
+      function(cb) {
+        me._setHorizontalMode(function(err, results) {
+            if (err)
+              cb(err, "_setHorizontalMode: " + err + " - " + results);
+            else
+              cb(err, "_setHorizontalMode: " + results);
+          }); 
       },
-      function(cbWhilst) {
-        async.series([
-          function(cb) {
-            me._setRowAndColumn([ row, row ], [ col, col ], function(err, results) {
-              if (err)
-                cb(err, "_setRowAndColumn: " + err + " - " + results);
-              else
-                cb(err, "_setRowAndColumn: " + results);
-            }); 
+      function (cb) {
+        async.whilst(
+          function() {
+            return i < blen;
           },
-          function(cb) {
-            console.log("...............buffer[" + byte + "]: " + me.buffer[byte]);
-            me._sendDataByte(me.buffer[byte], function(err, results) {
-              if (err)
-                cb(err, "_sendDataByte: " + err + " - " + results);
-              else
-                cb(err, "_sendDataByte: " + results);
-            }); 
-          }
-        ], function(err, results) {
-             if (err)
-               cbWhilst(err, results);
-             else {
-               i++;
-               if (i < blen) {
-                 byte = byteArray[i];
-                 row = Math.floor(byte / me.WIDTH);
-                 col = Math.floor(byte % me.HEIGHT) + 8;
-               }
-               cbWhilst(null, results);
-             }
-        });
+          function(cbWhilst) {
+            async.series([
+              function(cb) {
+                me._setRowAndColumn([ row, row ], [ col, col ], function(err, results) {
+                  if (err)
+                    cb(err, "_setRowAndColumn: " + err + " - " + results);
+                  else
+                    cb(err, "_setRowAndColumn: " + results);
+                }); 
+              },
+              function(cb) {
+                console.log("...............buffer[" + byte + "]: " + me.buffer[byte].toString(16));
+                me._sendDataByte(me.buffer[byte], function(err, results) {
+                  if (err)
+                    cb(err, "_sendDataByte: " + err + " - " + results);
+                  else
+                    cb(err, "_sendDataByte: " + results);
+                }); 
+              }
+            ], function(err, results) {
+                 if (err)
+                   cbWhilst(err, results);
+                 else {
+                   i++;
+                   if (i < blen) {
+                     byte = byteArray[i];
+                     row = Math.floor(byte % me.HEIGHT);
+                     col = Math.floor(byte / me.HEIGHT) + 8;
+                   }
+                   cbWhilst(null, results);
+                 }
+            });
+          },
+          function(err, results) {
+            // now that all bytes are synced, reset dirty state
+            if (err) {
+              cb(err, "_processDirtyBytes: " + err + " - " + results);
+            } else {
+              me.dirtyBytes = [];
+              cb(err, "_processDirtyBytes" + results);
+            }
+          });
       },
-      function(err, results) {
-        // now that all bytes are synced, reset dirty state
-        me.dirtyBytes = [];
-        callback(err, results);
-      });
+      function(cb) {
+        if (localAddressMode == me.HORIZONTAL) {
+          setTimeout(0, function() { cb(null, "success"); });
+        } else {
+          me._setHorizontalMode(function(err, results) {
+            if (err)
+              cb(err, "_setVerticalMode: " + err + " - " + results);
+            else
+              cb(err, "_setVerticalMode: " + results);
+          });
+        }
+      }
+    ], function(err, results) {
+          callback(err, results);
+  });
+}
+
+// looks at dirty bytes, and sends the updated bytes to the display
+Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
+  var blen = byteArray.length, i,
+      displaySeq = [],
+      byte, row, col,
+      me = this;
+      
+  if (arguments.length != 2) 
+    throw new Error("Callback argument not provided");
+
+  // this.update(callback);
+  // return;
+  if (blen == 0) {
+    me.dirtyBytes = [];
+    callback(null, "success 0");
+    return;
+  }
+  // check to see if this will even save time
+  // if (blen > (me.buffer.length / 7)) {
+  if (true) {
+    // just call regular update at this stage, saves on bytes sent
+    me._update(callback);
+  } else {
+    me._processDirtyBytes(byteArray, callback);
   }
 }
 
