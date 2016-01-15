@@ -950,6 +950,18 @@ Oled.prototype._drawPixel = function(pixels, sync) {
   }
 }
 
+Oled.prototype._horizontalModeRowAndColumn = function(index) {
+  var row,
+      col;
+  if (index < (55 - 8)) {
+    return [0, index + 8];
+  } else {
+     col = Math.floor(index  % (55 - 8)) + 8;
+     row = Math.floor(index / (55 - 8));
+     return [row, col];
+  }
+} 
+
 Oled.prototype._processDirtyBytes = function(byteArray, callback) {
   var blen = byteArray.length, i,
     byte, row, col,
@@ -980,9 +992,10 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
     // iterate through dirty bytes
     i = 0;
     byte = byteArray[i];
-    row = Math.floor(byte / 96);
-    col = Math.floor(byte % (55 - 8 + 1)) + 8;
-
+    // row = Math.floor(byte / 96);
+    // col = Math.floor((byte % 96 ) / 2 ) + 8;
+    row = me._horizontalModeRowAndColumn(byte)[0];
+    col = me._horizontalModeRowAndColumn(byte)[1];
     async.series([
       function(cb) {
         me._setHorizontalMode(function(err, results) {
@@ -1023,8 +1036,10 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
                    i++;
                    if (i < blen) {
                      byte = byteArray[i];
-                     row = Math.floor(byte / 96);
-                     col = Math.floor(byte % (55 - 8 + 1)) + 8;
+                     // row = Math.floor(byte / 96);
+                     // col = Math.floor((byte % 96) / 2) + 8;
+                     row = me._horizontalModeRowAndColumn(byte)[0];
+                     col = me._horizontalModeRowAndColumn(byte)[1];
                    }
                    cbWhilst(null, results);
                  }
