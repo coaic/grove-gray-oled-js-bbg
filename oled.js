@@ -75,7 +75,7 @@ var Oled = function(opts) {
   
   this.debugCmdLogEnable = false;
   this.debugDataLogEnable = true;
-  this.debugScreenBufferLogEnable = true;
+  this.debugScreenBufferLogEnable = false;
 
   // new blank buffer
   this.buffer = new Buffer((this.WIDTH * this.HEIGHT) / 2);
@@ -136,22 +136,24 @@ Oled.prototype.debugScreenBufferLog = function(buffer) {
       byte,
       len = buffer.length;
       
-  for (i = 0; i < len; i += 32) {
-    if (i < 10) {
-      padding = "   ";
-    } else if (i < 100) {
-      padding = "  ";
-    } else if (i < 1000) {
-      padding = " ";
-    } else {
-      padding = "";
+  if (this.debugScreenBufferLogEnable) {
+    for (i = 0; i < len; i += 32) {
+      if (i < 10) {
+        padding = "   ";
+      } else if (i < 100) {
+        padding = "  ";
+      } else if (i < 1000) {
+        padding = " ";
+      } else {
+        padding = "";
+      }
+      logLine = padding + i.toString(10) + ": "
+      for (j = i; j < (i + 32); j++) {
+        byte = buffer[j]
+        logLine += " 0x" + (byte < 16 ? "0" + byte.toString(16) : byte.toString(16));
+      }
+      console.log(logLine);
     }
-    logLine = padding + i.toString(10) + ": "
-    for (j = i; j < (i + 32); j++) {
-      byte = buffer[j]
-      logLine += " 0x" + (byte < 16 ? "0" + byte.toString(16) : byte.toString(16));
-    }
-    console.log(logLine);
   }
 }
 
@@ -876,11 +878,11 @@ Oled.prototype._drawBitmap = function(pixels, sync, callback) {
       color = 0;
       if ((chunk << j) & 0x80) {
         if (j % 2) {
-          color = me.grayH;
-          me.buffer[buffer_index] |= me.grayH;
-        } else {
           color = me.grayL;
           me.buffer[buffer_index] |= me.grayL;
+        } else {
+          color = me.grayH;
+          me.buffer[buffer_index] |= me.grayH;
           if (me.dirtyBytes.indexOf(buffer_index) === -1)
             me.dirtyBytes.push(buffer_index);
         }
