@@ -73,7 +73,7 @@ var Oled = function(opts) {
   this.cursor_x = 0;
   this.cursor_y = 0;
   
-  this.debugCmdLogEnable = false;
+  this.debugCmdLogEnable = true;
   this.debugDataLogEnable = true;
   this.debugScreenBufferLogEnable = false;
 
@@ -862,6 +862,7 @@ Oled.prototype.drawBitmap = function(pixels, sync) {
 Oled.prototype._drawBitmap = function(pixels, sync, callback) {
   var immed = (typeof sync === 'undefined') ? true : sync;
   var i, j, x, y,
+      newByteData,
       pixel_index,
       buffer_index,
       chunk,
@@ -870,6 +871,7 @@ Oled.prototype._drawBitmap = function(pixels, sync, callback) {
 
   pixel_index = 0;
   buffer_index = 0;
+  newByteData = 0;
   for (i = 0; i < pixels.length; i++, pixel_index += 8) {
     chunk = pixels[i];
     for (j = 0; j < 8; j++, pixel_index++) {
@@ -879,18 +881,22 @@ Oled.prototype._drawBitmap = function(pixels, sync, callback) {
       if ((chunk << j) & 0x80) {
         if (j % 2) {
           color = me.grayL;
-          me.buffer[buffer_index] |= me.grayL;
+          newByteData |= me.grayL;
         } else {
           color = me.grayH;
-          me.buffer[buffer_index] |= me.grayH;
+          newByteData |= me.grayH;
+        }
+      }
+      if (j % 2) {
+        if (newByteData != me.buffer[buffer_index]) {
+          me.buffer[buffer_index] = newByteData;
           if (me.dirtyBytes.indexOf(buffer_index) === -1)
             me.dirtyBytes.push(buffer_index);
         }
-      }
-      if (j % 2) 
+        newByteData = 0;
         buffer_index++;
 //      me._drawPixel([x, y, color], false);
-      
+      }
     }
   }
 
@@ -1070,7 +1076,7 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
   }
   // check to see if this will even save time
   // if (blen > (me.buffer.length / 7)) {
-  if (true) {
+  if (false) {
     // just call regular update at this stage, saves on bytes sent
     me._update(callback);
   } else {
