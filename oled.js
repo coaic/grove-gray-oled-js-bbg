@@ -980,8 +980,8 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
     // iterate through dirty bytes
     i = 0;
     byte = byteArray[i];
-    row = Math.floor(byte % me.HEIGHT);
-    col = Math.floor(byte / me.HEIGHT) + 8;
+    row = Math.floor(byte / 96);
+    col = Math.floor(byte % (55 - 8 + 1)) + 8;
 
     async.series([
       function(cb) {
@@ -1023,8 +1023,8 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
                    i++;
                    if (i < blen) {
                      byte = byteArray[i];
-                     row = Math.floor(byte % me.HEIGHT);
-                     col = Math.floor(byte / me.HEIGHT) + 8;
+                     row = Math.floor(byte / 96);
+                     col = Math.floor(byte % (55 - 8 + 1)) + 8;
                    }
                    cbWhilst(null, results);
                  }
