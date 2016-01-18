@@ -9,7 +9,7 @@ var i2c = require('i2c-bus'),
 var Oled = function(opts) {
 
   this.HEIGHT = opts.height || 96; // Also try 96; 128 is the GDRAM dimension
-  this.WIDTH = opts.width || 55;   // Also try 96; 128 is the GDRAM dimension
+  this.WIDTH = opts.width || 96;   // Also try 96; 128 is the GDRAM dimension
   this.ADDRESS = opts.address || 0x3C;
   this.PROTOCOL = 'I2C';
   
@@ -26,7 +26,7 @@ var Oled = function(opts) {
   this.i2c1,
   this.Command_Mode = 0x80;
   this.Data_Mode = 0x40;
-  this.VideoRAMSize = 48 * 96;
+  this.VideoRAMSize = Math.floor(this.WIDTH / 2) * this.HEIGHT;
 
   // create command
   this.SETCOMMANDLOCK = 0xFD;
@@ -96,7 +96,7 @@ var Oled = function(opts) {
       'compins': 0x12,
       'coloffset': 0
     },
-    '55x96': {
+    '96x96': {
       'multiplex': 0x5F,
       'compins': 0x12,
       'coloffset': 8
@@ -953,18 +953,21 @@ Oled.prototype._drawPixel = function(pixels, sync) {
 Oled.prototype._horizontalModeRowAndColumn = function(index) {
   var row,
       col;
-  if (index < (55 - 8)) {
-    return [0, index + 8];
-  } else {
-     col = Math.floor(index  % (55 - 8)) + 8;
-     row = Math.floor(index / (55 - 8));
-     return [row, col];
-  }
+  // if (index < (55 - 8)) {
+  //   return [0, index + 8];
+  // } else {
+  //   col = Math.floor(index  % (55 - 8)) + 8;
+  //   row = Math.floor(index / (55 - 8));
+  //   return {row: row, col: col};
+  // }
+  col = Math.floor(index % (this.WIDTH / 2)) + 8;
+  row = Math.floor(index / (this.HEIGHT / 2));
+  return {row: row, col: col};
 } 
 
 Oled.prototype._processDirtyBytes = function(byteArray, callback) {
   var blen = byteArray.length, i,
-    byte, row, col,
+    byte, p,
     me = this,
     localAddressMode = me.addressMode;
     
@@ -994,8 +997,7 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
     byte = byteArray[i];
     // row = Math.floor(byte / 96);
     // col = Math.floor((byte % 96 ) / 2 ) + 8;
-    row = me._horizontalModeRowAndColumn(byte)[0];
-    col = me._horizontalModeRowAndColumn(byte)[1];
+    p = me._horizontalModeRowAndColumn(byte)
     async.series([
       function(cb) {
         me._setHorizontalMode(function(err, results) {
@@ -1013,7 +1015,7 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
           function(cbWhilst) {
             async.series([
               function(cb) {
-                me._setRowAndColumn([ row, row ], [ col, col ], function(err, results) {
+                me._setRowAndColumn([ p.row, p.row ], [ p.col, p.col ], function(err, results) {
                   if (err)
                     cb(err, "_setRowAndColumn: " + err + " - " + results);
                   else
@@ -1038,8 +1040,7 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
                      byte = byteArray[i];
                      // row = Math.floor(byte / 96);
                      // col = Math.floor((byte % 96) / 2) + 8;
-                     row = me._horizontalModeRowAndColumn(byte)[0];
-                     col = me._horizontalModeRowAndColumn(byte)[1];
+                     p = me._horizontalModeRowAndColumn(byte);
                    }
                    cbWhilst(null, results);
                  }
