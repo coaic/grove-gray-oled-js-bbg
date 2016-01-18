@@ -73,8 +73,8 @@ var Oled = function(opts) {
   this.cursor_x = 0;
   this.cursor_y = 0;
   
-  this.debugCmdLogEnable = true;
-  this.debugDataLogEnable = true;
+  this.debugCmdLogEnable = false;
+  this.debugDataLogEnable = false;
   this.debugScreenBufferLogEnable = false;
 
   // new blank buffer
@@ -821,7 +821,6 @@ Oled.prototype.invertDisplay = function(bool) {
 Oled.prototype._setRowAndColumn = function(row, col, callback) {
   var me = this;
   
-  console.log("............_setRowAndColumn - row[" + row[0] + ", " + row[1] + "], col[" + col[0] + ", " + col[1] + "]");
   async.series([
       function(cb) {
         me._sendCommand(me.ROW_ADDR, new Buffer(row), function(err, results) {  // set start and end row address
@@ -953,13 +952,7 @@ Oled.prototype._drawPixel = function(pixels, sync) {
 Oled.prototype._horizontalModeRowAndColumn = function(index) {
   var row,
       col;
-  // if (index < (55 - 8)) {
-  //   return [0, index + 8];
-  // } else {
-  //   col = Math.floor(index  % (55 - 8)) + 8;
-  //   row = Math.floor(index / (55 - 8));
-  //   return {row: row, col: col};
-  // }
+
   col = Math.floor(index % (this.WIDTH / 2)) + 8;
   row = Math.floor(index / (this.HEIGHT / 2));
   return {row: row, col: col};
@@ -972,31 +965,8 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
     localAddressMode = me.addressMode;
     
     // // iterate through dirty bytes
-    // for (var i = 0; i < blen; i += 1) {
-
-    //   var byte = byteArray[i];
-    //   var page = Math.floor(byte / this.WIDTH);
-    //   var col = Math.floor(byte % this.WIDTH);
-
-    //   var displaySeq = [
-    //     this.COLUMN_ADDR, col, col, // column start and end address
-    //     this.PAGE_ADDR, page, page // page start and end address
-    //   ];
-
-    //   var displaySeqLen = displaySeq.length, v;
-
-    //   // send intro seq
-    //   for (v = 0; v < displaySeqLen; v += 1) {
-    //     this._transfer('cmd', displaySeq[v]);
-    //   }
-    //   // send byte, then move on to next byte
-    //   this._transfer('data', this.buffer[byte]);
-    //   this.buffer[byte];
-    // iterate through dirty bytes
     i = 0;
     byte = byteArray[i];
-    // row = Math.floor(byte / 96);
-    // col = Math.floor((byte % 96 ) / 2 ) + 8;
     p = me._horizontalModeRowAndColumn(byte)
     async.series([
       function(cb) {
@@ -1023,7 +993,6 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
                 }); 
               },
               function(cb) {
-                console.log("...............buffer[" + byte + "]: " + me.buffer[byte].toString(16));
                 me._sendDataByte(me.buffer[byte], function(err, results) {
                   if (err)
                     cb(err, "_sendDataByte: " + err + " - " + results);
@@ -1038,8 +1007,6 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
                    i++;
                    if (i < blen) {
                      byte = byteArray[i];
-                     // row = Math.floor(byte / 96);
-                     // col = Math.floor((byte % 96) / 2) + 8;
                      p = me._horizontalModeRowAndColumn(byte);
                    }
                    cbWhilst(null, results);
@@ -1091,9 +1058,8 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
     return;
   }
   // check to see if this will even save time
-  // if (blen > (me.buffer.length / 7)) {
-  if (false) {
-    // just call regular update at this stage, saves on bytes sent
+  if (blen > (me.buffer.length / 7)) {
+    // Call regular update at this stage, saves on bytes sent
     me._update(callback);
   } else {
     me._processDirtyBytes(byteArray, callback);
