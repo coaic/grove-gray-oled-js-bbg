@@ -721,7 +721,7 @@ Oled.prototype._update = function(callback) {
           }); 
       },
       function(cb) {
-        if (localAddressMode == me.HORIZONTAL) {
+        if (localAddressMode == me.HORIZONTAL_MODE) {
           setTimeout(0, function() { cb(null, "success"); });
         } else {
           me._setVerticalMode(function(err, results) {
@@ -761,6 +761,8 @@ Oled.prototype.turnOnDisplay = function() {
   this._transfer('cmd', this.DISPLAY_ON);
 }
 
+// Clear OLED GRAM and screen buffer
+//
 Oled.prototype.clearDisplay = function(sync) {
   var me = this,
     promise = new Promise(function(resolve, reject) {
@@ -804,6 +806,12 @@ Oled.prototype.clearDisplay = function(sync) {
     });
       
   return promise;
+}
+
+// Clear screen buffer without update OLED GRAM
+//
+Oled.prototype.clearBuffer = function() {
+  this.buffer.fill(0x00);
 }
 
 // invert pixels on oled
@@ -878,7 +886,10 @@ Oled.prototype._drawBitmap = function(pixels, sync, callback) {
 
   if (immed) {
     me._updateDirtyBytes(me.dirtyBytes, callback);
+  } else {
+    setTimeout(0, function() { callback(null, "success"); });
   }
+
 }
 
 // Draw one or many pixels to oled screen buffer
@@ -996,7 +1007,7 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
           });
       },
       function(cb) {
-        if (localAddressMode == me.HORIZONTAL) {
+        if (localAddressMode == me.HORIZONTAL_MODE) {
           setTimeout(0, function() { cb(null, "success"); });
         } else {
           me._setHorizontalMode(function(err, results) {
@@ -1038,16 +1049,32 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
   }
 }
 
-// using Bresenham's line algorithm
 Oled.prototype.drawLine = function(x0, y0, x1, y1, color, sync) {
-  var immed = (typeof sync === 'undefined') ? true : sync;
+  var me = this,
+    promise = new Promise(function(resolve, reject) {
+      me._drawLine(x0, y0, x1, y1, color, sync, function(err, results) {
+        if (err)
+          reject(new Error("Oled _drawLine failed: " + err + "; results: " + results));
+        else
+          resolve(results);
+      })
+    });
+    
+  return promise;
+}
+
+// using Bresenham's line algorithm
+//
+Oled.prototype._drawLine = function(x0, y0, x1, y1, color, sync, callback) {
+  var me = this,
+      immed = (typeof sync === 'undefined') ? true : sync;
 
   var dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1,
       dy = Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1,
       err = (dx > dy ? dx : -dy) / 2;
 
   while (true) {
-    this._drawPixel([x0, y0, color]);
+    me._drawPixel([x0, y0, color]);
 
     if (x0 === x1 && y0 === y1) break;
 
@@ -1058,7 +1085,9 @@ Oled.prototype.drawLine = function(x0, y0, x1, y1, color, sync) {
   }
 
   if (immed) {
-    this._updateDirtyBytes(this.dirtyBytes);
+    me._updateDirtyBytes(me.dirtyBytes, callback);
+  } else {
+    setTimeout(0, function() { callback(null, "success"); });
   }
 }
 
