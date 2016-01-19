@@ -1,9 +1,9 @@
 {
-  "name": "oled-js-pi",
-  "version": "1.0.5",
-  "description": "NodeJS module for controlling oled devices on the Raspbery Pi (including the SSD1306 OLED screens)",
+  "name": "grove-gray-oled-js-bbg",
+  "version": "1.0.1",
+  "description": "NodeJS module for controlling gray scale oled devices on the Beaglebone Green (including the SSD1327 OLED screens)",
   "main": "oled.js",
-  "dependencies": {"i2c": "~0.2.1"},
+  "dependencies": {"i2c-bus": "~1.0.1"},
   "devDependencies": {
     "oled-font-5x7": "~1.0.0",
     "png-to-lcd": "~1.0.2",
@@ -15,19 +15,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kd7yva/oled-js-pi.git"
+    "url": "https://github.com/coaic/grove-gray-oled-js-bbg.git"
   },
   "keywords": [
-    "Raspbery Pi",
-    "Pi",
+    "Beaglebone Green",
+    "BBG",
     "NodeJS",
     "oled",
-    "SSD1306"
+    "gray scale",
+    "grey scale",
+    "SSD1327"
   ],
-  "author": ["Judd Flamm", "Suz Hinton"],
+  "author": ["Shane MacPhillamy", "Judd Flamm", "Suz Hinton"],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kd7yva/oled-js-pi/issues"
+    "url": "https://github.com/coaic/grove-gray-oled-js-bbg/issues"
   },
-  "homepage": "https://github.com/kd7yva/oled-js-pi"
+  "homepage": "https://github.com/coaic/grove-gray-oled-js-bbg"
 }
