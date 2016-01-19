@@ -92,7 +92,7 @@ async.series([
     function(cb) {
         setTimeout(function() {
             cb(null, "complete");
-            }, 10000);
+            }, 1000);
     },
     function(cb) {
         console.log(".....clear screen");
@@ -110,7 +110,7 @@ async.series([
     function(cb) {
         setTimeout(function() {
             cb(null, "complete");
-            }, 5000);
+            }, 1000);
     },
     function(cb) {
         console.log(".....draw diagonal lines");
@@ -119,7 +119,26 @@ async.series([
     },
     function(cb) {
         processPromise(screen.drawLine(0, 95, 95, 0, 1), cb);
-    }
+    },
+    function(cb) {
+        setTimeout(function() {
+            cb(null, "complete");
+            }, 1000);
+    },
+    function(cb) {
+        console.log(".....draw two overlapping filled rectangles, followed by two non overlapping filled rectangles");
+        screen.clearBuffer();
+        processPromise(screen.fillRect(5, 10, 20, 30, 1, false), cb);
+    },    
+    function(cb) {
+        processPromise(screen.fillRect(15, 30, 30, 20, 1, false), cb);
+    },
+        function(cb) {
+        processPromise(screen.fillRect(60, 30, 20, 25, 1, false), cb);
+    },
+        function(cb) {
+        processPromise(screen.fillRect(40, 60, 15, 30, 1, true), cb);
+    }    
     ],
     function(err, results) {
         if (err) {

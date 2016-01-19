@@ -1,15 +1,15 @@
 ![‘npm version’](http://img.shields.io/npm/v/oled-js.svg?style=flat) ![‘downloads over month’](http://img.shields.io/npm/dm/oled-js.svg?style=flat)
 
-OLED JS Pi
+Grove Gray OLED JS Beaglebone Green
 ========================
 
-![oled-cat](http://f.cl.ly/items/2G041X2C1o2A1n2D3S18/cat-oled.png)
+![oled-seeed](https://goo.gl/X9ROso)
 
 ## What is this?
 
-A NodeJS driver for I2C/SPI compatible monochrome OLED screens; to be used on the Raspberry Pi! Works with 128 x 32, 128 x 64 and 96 x 16 sized screens, of the SSD1306 OLED/PLED Controller (read the [datasheet here](http://www.adafruit.com/datasheets/SSD1306.pdf)).
+A NodeJS driver for I2C/SPI compatible monochrome OLED screens; to be used on the Beaglebone Green! Currently Works with  96 x 96 sized 4-bit gray scale screens, of the SSD1327 OLED/PLED Controller (read the [datasheet here](http://www.seeedstudio.com/wiki/File:SSD1327_datasheet.pdf)).
 
-This based on the Blog Post and code by Suz Hinton - [Read her blog post about how OLED screens work](http://meow.noopkat.com/oled-js/)!
+This based on [OLED JS Pi](https://github.com/kd7yva/oled-js-pi) and the Blog Post and code by Suz Hinton - [Read her blog post about how OLED screens work](http://meow.noopkat.com/oled-js/)!
 
 OLED screens are really cool - now you can control them with JavaScript!
 
@@ -17,10 +17,10 @@ OLED screens are really cool - now you can control them with JavaScript!
 
 If you haven't already, install [NodeJS](http://nodejs.org/).
 
-`npm install oled-js-pi`
+`npm install grove-gray-oled-js-bbg`
 
 ## I2C screens
-Hook up I2C compatible oled to the Raspberry Pi. Pins: SDL and SCL
+Hook up I2C compatible Grove Gray OLED  to the Beaglebone Gree. Pins: SDL and SCL
 
 ### I2C example
 
@@ -28,9 +28,9 @@ Hook up I2C compatible oled to the Raspberry Pi. Pins: SDL and SCL
 var oled = require('oled-js-pi');
 
 var opts = {
-  width: 128,
-  height: 64,
-  address: 0x3D
+  width: 96,
+  height: 96,
+  address: 0x3C
 };
 
 var oled = new oled(opts);

@@ -303,7 +303,7 @@ Oled.prototype._setContrastLevel = function (contrastLevel, cb) {
 Oled.prototype._setGrayLevel = function (grayLevel, cb) {
   this.grayH = (grayLevel << 4) & 0xF0;
   this.grayL = grayLevel & 0x0F;
-  setTimeout(0, function() { cb(null, "success"); });
+  setTimeout(function() { cb(null, "success"); }, 0);
 }
 
 Oled.prototype._setHorizontalMode = function (callback) {
@@ -634,7 +634,7 @@ Oled.prototype._writeString = function(font, size, string, color, wrap, sync, ca
   if (immed) {
     me._updateDirtyBytes(this.dirtyBytes, callback);
   } else {
-    setTimeout(0, function() { callback(null, "success"); });
+    setTimeout(function() { callback(null, "success"); }, 0);
   }
 }
 
@@ -643,6 +643,9 @@ Oled.prototype._drawChar = function(byteArray, size, color, sync) {
   // take your positions...
   var x = this.cursor_x,
       y = this.cursor_y;
+      
+  if (size != 1)
+    return;   // Don't try and scale character, just do nothing
 
   // loop through the byte array containing the hexes for the char
   for (var i = 0; i < byteArray.length; i += 1) {
@@ -651,16 +654,9 @@ Oled.prototype._drawChar = function(byteArray, size, color, sync) {
       var color = byteArray[i][j],
           xpos, ypos;
       // standard font size
-      if (size === 1) {
-        xpos = x + i;
-        ypos = y + j;
-        this._drawPixel([xpos, ypos, color], false);
-      } else {
-        // MATH! Calculating pixel size multiplier to primitively scale the font
-        xpos = x + (i * size);
-        ypos = y + (j * size);
-        this.fillRect(xpos, ypos, size, size, color, false);
-      }
+      xpos = x + i;
+      ypos = y + j;
+      this._drawPixel([xpos, ypos, color]);
     }
   }
 }
@@ -722,7 +718,7 @@ Oled.prototype._update = function(callback) {
       },
       function(cb) {
         if (localAddressMode == me.HORIZONTAL_MODE) {
-          setTimeout(0, function() { cb(null, "success"); });
+          setTimeout(function() { cb(null, "success"); }, 0);
         } else {
           me._setVerticalMode(function(err, results) {
             if (err)
@@ -887,7 +883,7 @@ Oled.prototype._drawBitmap = function(pixels, sync, callback) {
   if (immed) {
     me._updateDirtyBytes(me.dirtyBytes, callback);
   } else {
-    setTimeout(0, function() { callback(null, "success"); });
+    setTimeout(function() { callback(null, "success"); }, 0);
   }
 
 }
@@ -1008,7 +1004,7 @@ Oled.prototype._processDirtyBytes = function(byteArray, callback) {
       },
       function(cb) {
         if (localAddressMode == me.HORIZONTAL_MODE) {
-          setTimeout(0, function() { cb(null, "success"); });
+          setTimeout(function() { cb(null, "success"); }, 0);
         } else {
           me._setHorizontalMode(function(err, results) {
             if (err)
@@ -1087,21 +1083,64 @@ Oled.prototype._drawLine = function(x0, y0, x1, y1, color, sync, callback) {
   if (immed) {
     me._updateDirtyBytes(me.dirtyBytes, callback);
   } else {
-    setTimeout(0, function() { callback(null, "success"); });
+    setTimeout(function() { 
+      callback(null, "success"); }, 0);
   }
 }
 
-// draw a filled rectangle on the oled
 Oled.prototype.fillRect = function(x, y, w, h, color, sync) {
-  var immed = (typeof sync === 'undefined') ? true : sync;
-  // one iteration for each column of the rectangle
-  for (var i = x; i < x + w; i += 1) {
-    // draws a vert line
-    this.drawLine(i, y, i, y+h-1, color, false);
-  }
-  if (immed) {
-    this._updateDirtyBytes(this.dirtyBytes);
-  }
+  var me = this,
+    promise = new Promise(function(resolve, reject) {
+      me._fillRect(x, y, w, h, color, sync, function(err, results) {
+        if (err)
+          reject(new Error("Oled _fillRect failed: " + err + "; results: " + results));
+        else
+          resolve(results);
+      })
+    });
+    
+  return promise;
+}
+
+// draw a filled rectangle on the oled
+Oled.prototype._fillRect = function(x, y, w, h, color, sync, callback) {
+  var me = this,
+      i,
+      immed = (typeof sync === 'undefined') ? true : sync;
+  // // one iteration for each column of the rectangle
+  // for (var i = x; i < x + w; i += 1) {
+  //   // draws a vert line
+  //   this._drawLine(i, y, i, y+h-1, color, false);
+  // }
+  // if (immed) {
+  //   this._updateDirtyBytes(this.dirtyBytes, callback);
+  // } else {
+  //   setTimeout(function() {callback(null, "success"); }, 0);
+  // }
+  
+  i = x;
+  async.whilst(
+    function() { 
+      return i < x + w; 
+    },
+    function(cb) {
+      me._drawLine(i, y, i, y+h-1, color, false, function() { 
+        i++;
+        cb(null, i);
+      });
+    },
+    function(err, n) {
+      if (err) {
+        callback(err, n);
+      } else {
+        if (immed) {
+          me._updateDirtyBytes(me.dirtyBytes, callback);
+        } else {
+          setTimeout(function() { callback(null, "success"); }, 0);
+        }
+      }
+    }
+  );
 }
 
 // activate scrolling for rows start through stop
