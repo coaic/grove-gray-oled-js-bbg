@@ -88,7 +88,12 @@ async.series([
         processPromise(screen.drawBitmap(res.splash, true), cb);
     },
     function(cb) {
-        setTimeout(processPromise(screen.clearDisplay(true), cb), 2000);
+        setTimeout(function() {
+            cb(null, "complete");
+            }, 10000);
+    },
+    function(cb) {
+        processPromise(screen.clearDisplay(true), cb);
     },
     function(cb) {
         screen.setCursor(1, 1);
@@ -99,7 +104,7 @@ async.series([
         if (err) {
             console.trace("async.series failed " + err);
         } else {
-            console.log("All promises completed....")
+            console.log("All promises completed..... ");
         }
         
     }

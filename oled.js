@@ -774,11 +774,9 @@ Oled.prototype.clearDisplay = function(sync) {
             });
           },
           function(cb) {
-            // Write zeroes to Graffics RAM
-            var buf = new Buffer(me.VideoRAMSize);
-            
-            buf.fill(0x00);
-            me._sendData(buf, buf.length, cb);
+            // Write zeroes to Graffics RAM and clear display buffer
+            me.buffer.fill(0x00);
+            me._sendData(me.buffer, me.buffer.length, cb);
           },
           function(cb) {
             me._setDisplayModeNormal(function(err, results) {
@@ -806,24 +804,6 @@ Oled.prototype.clearDisplay = function(sync) {
     });
       
   return promise;
-}
-
-// clear all pixels currently on the display
-Oled.prototype._clearDisplay = function(sync, callback) {
-  var immed = (typeof sync === 'undefined') ? true : sync;
-  // write off pixels
-  //this.buffer.fill(0x00);
-  for (var i = 0; i < this.buffer.length; i += 1) {
-    if (this.buffer[i] !== 0x00) {
-      this.buffer[i] = 0x00;
-      if (this.dirtyBytes.indexOf(i) === -1) {
-        this.dirtyBytes.push(i);
-      }
-    }
-  }
-  if (immed) {
-    this._updateDirtyBytes(this.dirtyBytes, callback);
-  }
 }
 
 // invert pixels on oled
