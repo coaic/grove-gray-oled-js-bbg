@@ -2,6 +2,7 @@
 var 
     Promise = require('promise'),
     res = require("./res"),
+    OledFont = require('oled-font-5x7'),
     OLED = require("../oled");
 
 Date.prototype.format = function(fmt) { //author: meizz 
@@ -78,6 +79,16 @@ screen.init()
                 screen.drawBitmap(res.splash, true)
                     .then(function(results) {
                         console.log(".....screen drawBitmap promise resolved");
+                        setTimeout(function() {
+                            screen.setCursor(1, 1);
+                            screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 15, true)
+                                .then(function(results) {
+                                    console.log("......writeString promise resolved");
+                                })
+                                .catch(function(err) {
+                                   console.trace(".....writeString promise rejected: " + err); 
+                                });
+                          }, 2000);
                     })
                     .catch(function(err) {
                         console.trace(".....screen drawBitmap promise rejected: " + err);
@@ -92,15 +103,6 @@ screen.init()
     });
 
 return;
-
-screenCleared.then(function(results) {
-        console.log(".......promise resolved");
-        screen.drawBitmap(res.splash, true);
-    })
-    .catch(function(err) {
-        console.log(".....promise reject");
-    });
-
 
 // ['exit', 'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT', 'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'].forEach(function(element, index, array) {
 //     process.on(element, function() {

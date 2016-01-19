@@ -570,13 +570,28 @@ Oled.prototype.setCursor = function(x, y) {
   this.cursor_y = y;
 }
 
-// write text to the oled
 Oled.prototype.writeString = function(font, size, string, color, wrap, sync) {
-  var immed = (typeof sync === 'undefined') ? true : sync;
+  var me = this,
+    promise = new Promise(function(resolve, reject) {
+      me._writeString(font, size, string, color, wrap, sync, function(err, results) {
+        if (err)
+          reject(new Error("Oled _writeString failed: " + err + "; results: " + results));
+        else
+          resolve(results);
+      })
+    });
+    
+  return promise;
+}
+
+// write text to the oled screen buffer
+Oled.prototype._writeString = function(font, size, string, color, wrap, sync, callback) {
+  var me = this,
+      immed = (typeof sync === 'undefined') ? true : sync;
   var wordArr = string.split(' '),
       len = wordArr.length,
       // start x offset at cursor pos
-      offset = this.cursor_x,
+      offset = me.cursor_x,
       padding = 0, letspace = 1, leading = 2;
 
   // loop through words
@@ -588,41 +603,43 @@ Oled.prototype.writeString = function(font, size, string, color, wrap, sync) {
         compare = (font.width * size * slen) + (size * (len -1));
 
     // wrap words if necessary
-    if (wrap && len > 1 && (offset >= (this.WIDTH - compare)) ) {
+    if (wrap && len > 1 && (offset >= (me.WIDTH - compare)) ) {
       offset = 1;
-      this.cursor_y += (font.height * size) + size + leading;
-      this.setCursor(offset, this.cursor_y);
+      me.cursor_y += (font.height * size) + size + leading;
+      me.setCursor(offset, me.cursor_y);
     }
 
     // loop through the array of each char to draw
     for (var i = 0; i < slen; i += 1) {
       // look up the position of the char, pull out the buffer slice
-      var charBuf = this._findCharBuf(font, stringArr[i]);
+      var charBuf = me._findCharBuf(font, stringArr[i]);
       // read the bits in the bytes that make up the char
-      var charBytes = this._readCharBytes(charBuf);
+      var charBytes = me._readCharBytes(charBuf);
       // draw the entire character
-      this._drawChar(charBytes, size, false);
+      me._drawChar(charBytes, size, color, false);
 
       // calc new x position for the next char, add a touch of padding too if it's a non space char
       padding = (stringArr[i] === ' ') ? 0 : size + letspace;
       offset += (font.width * size) + padding;
 
       // wrap letters if necessary
-      if (wrap && (offset >= (this.WIDTH - font.width - letspace))) {
+      if (wrap && (offset >= (me.WIDTH - font.width - letspace))) {
         offset = 1;
-        this.cursor_y += (font.height * size) + size + leading;
+        me.cursor_y += (font.height * size) + size + leading;
       }
       // set the 'cursor' for the next char to be drawn, then loop again for next char
-      this.setCursor(offset, this.cursor_y);
+      me.setCursor(offset, me.cursor_y);
     }
   }
   if (immed) {
-    this._updateDirtyBytes(this.dirtyBytes);
+    me._updateDirtyBytes(this.dirtyBytes, callback);
+  } else {
+    setTimeout(0, function() { callback(null, "success"); });
   }
 }
 
 // draw an individual character to the screen
-Oled.prototype._drawChar = function(byteArray, size, sync) {
+Oled.prototype._drawChar = function(byteArray, size, color, sync) {
   // take your positions...
   var x = this.cursor_x,
       y = this.cursor_y;
@@ -1050,7 +1067,7 @@ Oled.prototype.drawLine = function(x0, y0, x1, y1, color, sync) {
       err = (dx > dy ? dx : -dy) / 2;
 
   while (true) {
-    this._drawPixel([x0, y0, color], false);
+    this._drawPixel([x0, y0, color]);
 
     if (x0 === x1 && y0 === y1) break;
 
