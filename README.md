@@ -7,7 +7,7 @@ Grove Gray OLED JS Beaglebone Green
 
 ## What is this?
 
-A NodeJS driver for I2C/SPI compatible monochrome OLED screens; to be used on the Beaglebone Green! Currently Works with  96 x 96 sized 4-bit gray scale screens, of the SSD1327 OLED/PLED Controller (read the [datasheet here](http://www.seeedstudio.com/wiki/File:SSD1327_datasheet.pdf)).
+A NodeJS driver for I2C/SPI compatible 4-bit gray OLED screens; to be used on the Beaglebone Green! Currently Works with  96 x 96 sized 4-bit gray scale screens, of the SSD1327 OLED/PLED Controller (read the [datasheet here](http://www.seeedstudio.com/wiki/File:SSD1327_datasheet.pdf)).
 
 This based on [OLED JS Pi](https://github.com/kd7yva/oled-js-pi) and the Blog Post and code by Suz Hinton - [Read her blog post about how OLED screens work](http://meow.noopkat.com/oled-js/)!
 
