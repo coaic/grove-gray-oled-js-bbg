@@ -1,6 +1,7 @@
 "use strict";
 var 
     Promise = require('promise'),
+    async = require('async'),
     res = require("./res"),
     OledFont = require('oled-font-5x7'),
     OLED = require("../oled");
@@ -32,6 +33,12 @@ var screen = new OLED({
     // }),
     // ct = screen.getContext("2d");
 
+function processPromise(promise, cb) {
+    setTimeout(function() {
+        promise
+            .then(function(results) { cb(null, results); })
+            .catch(function(err) { cb(err, "promise rejected"); }); }, 0);
+}
 
 // setInterval(function() {
 // //setTimeout(function() {
@@ -70,38 +77,65 @@ var screen = new OLED({
 //     });
 // });
 
-screen.init()
-    .then(function(results) {
-        console.log(".....screen init promise resolved");
-        screen.clearDisplay(true)
-            .then(function(results) {
-                console.log(".....screen cleared promise resolved");
-                screen.drawBitmap(res.splash, true)
-                    .then(function(results) {
-                        console.log(".....screen drawBitmap promise resolved");
-                        setTimeout(function() {
-                            screen.setCursor(1, 1);
-                            screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 15, true)
-                                .then(function(results) {
-                                    console.log("......writeString promise resolved");
-                                })
-                                .catch(function(err) {
-                                   console.trace(".....writeString promise rejected: " + err); 
-                                });
-                          }, 2000);
-                    })
-                    .catch(function(err) {
-                        console.trace(".....screen drawBitmap promise rejected: " + err);
-                    });
-            })
-            .catch(function(err) {
-                console.trace(".....screen clear promise rejected: " + err);
-            });
-    })
-    .catch(function(err) {
-        console.trace(".....screen init promise rejected: " + err);
-    });
+// screen.init()
+//     .then(function(results) {
+//         console.log(".....screen init promise resolved");
+//         screen.clearDisplay(true)
+//             .then(function(results) {
+//                 console.log(".....screen cleared promise resolved");
+//                 screen.drawBitmap(res.splash, true)
+//                     .then(function(results) {
+//                         console.log(".....screen drawBitmap promise resolved");
+//                         setTimeout(function() {
+//                             screen.setCursor(1, 1);
+//                             screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 15, true)
+//                                 .then(function(results) {
+//                                     console.log("......writeString promise resolved");
+//                                 })
+//                                 .catch(function(err) {
+//                                   console.trace(".....writeString promise rejected: " + err); 
+//                                 });
+//                           }, 2000);
+//                     })
+//                     .catch(function(err) {
+//                         console.trace(".....screen drawBitmap promise rejected: " + err);
+//                     });
+//             })
+//             .catch(function(err) {
+//                 console.trace(".....screen clear promise rejected: " + err);
+//             });
+//     })
+//     .catch(function(err) {
+//         console.trace(".....screen init promise rejected: " + err);
+//     });
 
+async.series([
+    function(cb) {
+        processPromise(screen.init(), cb);
+    },
+    function(cb) {
+        processPromise(screen.clearDisplay(true), cb);
+    },
+    function(cb) {
+        processPromise(screen.drawBitmap(res.splash, true), cb);
+    },
+    function(cb) {
+        setTimeout(processPromise(screen.clearDisplay(true), cb), 2000);
+    },
+    function(cb) {
+        screen.setCursor(1, 1);
+        processPromise(screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 15, true), cb);
+    }
+    ],
+    function(err, results) {
+        if (err) {
+            console.trace("async.series failed " + err);
+        } else {
+            console.log("All promises completed....")
+        }
+        
+    }
+);
 return;
 
 // ['exit', 'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT', 'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'].forEach(function(element, index, array) {

@@ -109,7 +109,7 @@ var Oled = function(opts) {
   };
 
   // Setup i2c
-  console.log('this.ADDRESS: ' + this.ADDRESS);
+  console.log('this.ADDRESS: ' + "0x" + this.ADDRESS.toString(16));
   // this.wire = new i2c(this.ADDRESS, {device: '/dev/i2c-0'}); // point to your i2c address, debug provides REPL interface
 
   var screenSize = this.WIDTH + 'x' + this.HEIGHT;
