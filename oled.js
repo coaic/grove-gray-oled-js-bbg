@@ -860,44 +860,16 @@ Oled.prototype.drawBitmap = function(pixels, sync) {
 // Draw an image pixel array on the screen
 Oled.prototype._drawBitmap = function(pixels, sync, callback) {
   var immed = (typeof sync === 'undefined') ? true : sync,
-      // i, j, x, y,
       i, j,
-      // newByteData,
       pixel_index,
       buffer_index,
       chunk,
       cart,
-      // color,
       me = this;
   
 
   pixel_index = 0;
-  // buffer_index = 0;
-  // newByteData = 0;
   for (i = 0; i < pixels.length; i++, pixel_index += 8) {
-    //chunk = pixels[i];
-    // for (j = 0; j < 8; j++, pixel_index++) {
-    //   x = Math.floor(pixel_index % this.WIDTH);
-    //   y = Math.floor(pixel_index / this.HEIGHT);
-    //   color = 0;
-    //   if ((chunk << j) & 0x80) {
-    //     if (j % 2) {
-    //       color = me.grayL;
-    //       newByteData |= me.grayL;
-    //     } else {
-    //       color = me.grayH;
-    //       newByteData |= me.grayH;
-    //     }
-    //   }
-    //   if (j % 2) {
-    //     if (newByteData != me.buffer[buffer_index]) {
-    //       me.buffer[buffer_index] = newByteData;
-    //       if (me.dirtyBytes.indexOf(buffer_index) === -1)
-    //         me.dirtyBytes.push(buffer_index);
-    //     }
-    //     newByteData = 0;
-    //     buffer_index++;
-    //   }
     chunk = pixels[i];
     for (j = 0; j < 8; j++) {
       if ((chunk << j) & 0x80) {
