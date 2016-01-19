@@ -77,38 +77,6 @@ function processPromise(promise, cb) {
 //     });
 // });
 
-// screen.init()
-//     .then(function(results) {
-//         console.log(".....screen init promise resolved");
-//         screen.clearDisplay(true)
-//             .then(function(results) {
-//                 console.log(".....screen cleared promise resolved");
-//                 screen.drawBitmap(res.splash, true)
-//                     .then(function(results) {
-//                         console.log(".....screen drawBitmap promise resolved");
-//                         setTimeout(function() {
-//                             screen.setCursor(1, 1);
-//                             screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 15, true)
-//                                 .then(function(results) {
-//                                     console.log("......writeString promise resolved");
-//                                 })
-//                                 .catch(function(err) {
-//                                   console.trace(".....writeString promise rejected: " + err); 
-//                                 });
-//                           }, 2000);
-//                     })
-//                     .catch(function(err) {
-//                         console.trace(".....screen drawBitmap promise rejected: " + err);
-//                     });
-//             })
-//             .catch(function(err) {
-//                 console.trace(".....screen clear promise rejected: " + err);
-//             });
-//     })
-//     .catch(function(err) {
-//         console.trace(".....screen init promise rejected: " + err);
-//     });
-
 async.series([
     function(cb) {
         processPromise(screen.init(), cb);
