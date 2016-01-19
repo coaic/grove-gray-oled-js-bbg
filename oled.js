@@ -926,10 +926,10 @@ Oled.prototype._drawPixel = function(pixels) {
       return;
 
     buffer_index = this._horizontalMode_x_y_to_index(x, y);
-    if (buffer_index % 2) {
-      this.buffer[buffer_index] |= color << 4;
-    } else {
+    if (x % 2) {
       this.buffer[buffer_index] |= color;
+    } else {
+      this.buffer[buffer_index] |= color << 4;
     }
 
     // push index to dirty if not already there
@@ -950,7 +950,7 @@ Oled.prototype._horizontalModeRowAndColumn = function(index) {
 } 
 
 Oled.prototype._horizontalMode_x_y_to_index = function(x, y) {
-  return Math.floor(x / 2) + (y * this.WIDTH);
+  return Math.floor(x / 2) + (y * Math.floor(this.WIDTH / 2));
 }
 
 Oled.prototype._horizontalMode_index_to_x_y = function(index) {
