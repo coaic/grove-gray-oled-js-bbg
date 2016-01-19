@@ -12,6 +12,7 @@ A NodeJS driver for I2C/SPI compatible 4-bit gray OLED screens; to be used on th
 This isbased on [OLED JS Pi](https://github.com/kd7yva/oled-js-pi) and the Blog Post and code by Suz Hinton - [Read her blog post about how OLED screens work](http://meow.noopkat.com/oled-js/)!
 
 The code has been refactored from [OLED JS Pi](https://github.com/kd7yva/oled-js-pi) to use [i2c-bus](https://github.com/fivdi/i2c-bus) in asynchronous mode with support from [async](https://github.com/caolan/async). Methods that may not complete immediately return a [promise](https://github.com/then/promise) for acting on in the future.
+
 OLED screens are really cool - now you can control them with JavaScript!
 
 ## Install
@@ -21,7 +22,7 @@ If you haven't already, install [NodeJS](http://nodejs.org/).
 `npm install grove-gray-oled-js-bbg`
 
 ## I2C screens
-Hook up I2C compatible Grove Gray OLED  to the Beaglebone Gree. Pins: SDL and SCL
+Hook up I2C compatible Grove Gray OLED  to the Beaglebone Green. Pins: SDL and SCL
 
 ### I2C example
 
