@@ -47,11 +47,11 @@ Check your screen's documentation...
 ## Available methods
 
 ### clearDisplay
-Fills the buffer with 'off' pixels (0x00). Optional bool argument specifies whether screen updates immediately with result. Default is true.
+Fills the screen buffer and GRAM with 'off' pixels (0x00). Optional bool argument specifies whether screen updates immediately with result. Default is true.
 
 Usage:
 ```javascript
-oled.clearDisplay();
+promise = oled.clearDisplay();
 ```
 
 ### dimDisplay
@@ -59,7 +59,7 @@ Lowers the contrast on the display. This method takes one argument, a boolean. T
 
 Usage:
 ```javascript
-oled.dimDisplay(true|false);
+promise = oled.dimDisplay(true|false);
 ```
 
 ### invertDisplay
@@ -67,7 +67,7 @@ Inverts the pixels on the display. Black becomes white, white becomes black. Thi
 
 Usage:
 ```javascript
-oled.invertDisplay(true|false);
+promise = oled.invertDisplay(true|false);
 ```
 
 ### turnOffDisplay
@@ -75,7 +75,7 @@ Turns the display off.
 
 Usage:
 ```javascript
-oled.turnOffDisplay();
+promise = oled.turnOffDisplay();
 ```
 
 ### turnOnDisplay
@@ -83,7 +83,7 @@ Turns the display on.
 
 Usage:
 ```javascript
-oled.turnOnDisplay();
+promise = oled.turnOnDisplay();
 ```
 
 
@@ -91,8 +91,6 @@ oled.turnOnDisplay();
 Draws a pixel at a specified position on the display. This method takes one argument: a multi-dimensional array containing either one or more sets of pixels.
 
 Each pixel needs an x position, a y position, and a color. Colors can be specified as either 0 for 'off' or black, and 1 or 255 for 'on' or white.
-
-Optional bool as last argument specifies whether screen updates immediately with result. Default is true.
 
 Usage:
 ```javascript
@@ -119,7 +117,7 @@ Optional bool as last argument specifies whether screen updates immediately with
 Usage:
 ```javascript
 // args: (x0, y0, x1, y1, color)
-oled.drawLine(1, 1, 128, 32, 1);
+promise = oled.drawLine(1, 1, 128, 32, 1);
 ```
 
 ### fillRect
@@ -135,7 +133,7 @@ Optional bool as last argument specifies whether screen updates immediately with
 Usage:
 ```javascript
 // args: (x0, y0, x1, y1, color)
-oled.fillRect(1, 1, 10, 20, 1);
+promise = oled.fillRect(1, 1, 10, 20, 1);
 ```
 
 ### drawBitmap
@@ -155,7 +153,7 @@ npm install pngparse
 var pngparse = require('pngparse');
 
 pngparse.parseFile('indexed_file.png', function(err, image) {
-	oled.drawBitmap(image.data);
+	promise = oled.drawBitmap(image.data);
 });
 ```
 
@@ -231,7 +229,7 @@ var font = require('oled-font-5x7');
 
 // sets cursor to x = 1, y = 1
 oled.setCursor(1, 1);
-oled.writeString(font, 1, 'Cats and dogs are really cool animals, you know.', 1, true);
+promise = oled.writeString(font, 1, 'Cats and dogs are really cool animals, you know.', 1, true);
 ```
 
 ### update
@@ -239,5 +237,5 @@ Sends the entire buffer in its current state to the oled display, effectively sy
 
 Usage:
 ```javascript
-oled.update();
+promise = oled.update();
 ```
