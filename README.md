@@ -47,11 +47,11 @@ Check your screen's documentation...
 ## Available methods
 
 ### clearDisplay
-Fills the screen buffer and GRAM with 'off' pixels (0x00). Optional bool argument specifies whether screen updates immediately with result. Default is true.
+Fills the screen buffer and GRAM with 'off' pixels (0x00). Bool argument specifies whether screen updates immediately with result.
 
 Usage:
 ```javascript
-promise = oled.clearDisplay();
+promise = oled.clearDisplay(true|false);
 ```
 
 ### dimDisplay
@@ -112,12 +112,12 @@ Arguments:
 + int **x1, y1** - end location of line
 + int **color** - can be specified as either 0 for 'off' or black, and 1 or 255 for 'on' or white.
 
-Optional bool as last argument specifies whether screen updates immediately with result. Default is true.
+Bool as last argument specifies whether screen updates immediately with result.
 
 Usage:
 ```javascript
-// args: (x0, y0, x1, y1, color)
-promise = oled.drawLine(1, 1, 128, 32, 1);
+// args: (x0, y0, x1, y1, color, sync)
+promise = oled.drawLine(1, 1, 128, 32, 1, true);
 ```
 
 ### fillRect
@@ -128,18 +128,18 @@ Arguments:
 + int **x1, y1** - bottom right corner of rectangle
 + int **color** - can be specified as either 0 for 'off' or black, and 1 or 255 for 'on' or white.
 
-Optional bool as last argument specifies whether screen updates immediately with result. Default is true.
+Bool as last argument specifies whether screen updates immediately with result.
 
 Usage:
 ```javascript
-// args: (x0, y0, x1, y1, color)
-promise = oled.fillRect(1, 1, 10, 20, 1);
+// args: (x0, y0, x1, y1, color, sync)
+promise = oled.fillRect(1, 1, 10, 20, 1, true);
 ```
 
 ### drawBitmap
 Draws a bitmap using raw pixel data returned from an image parser. The image sourced must be monochrome, and indexed to only 2 colors. Resize the bitmap to your screen dimensions first. Using an image editor or ImageMagick might be required.
 
-Optional bool as last argument specifies whether screen updates immediately with result. Default is true.
+Bool as last argument specifies whether screen updates immediately with result.
 
 Tip: use a NodeJS image parser to get the pixel data, such as [pngparse](https://www.npmjs.org/package/pngparse). A demonstration of using this is below.
 
@@ -153,7 +153,7 @@ npm install pngparse
 var pngparse = require('pngparse');
 
 pngparse.parseFile('indexed_file.png', function(err, image) {
-	promise = oled.drawBitmap(image.data);
+	promise = oled.drawBitmap(image.data, true);
 });
 ```
 

@@ -101,11 +101,11 @@ async.series([
     function(cb) {
         console.log(".....display arbitrary text");
         screen.setCursor(1, 1);
-        processPromise(screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 15, true), cb);
+        processPromise(screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 1, true, true), cb);
     },
     function(cb) {
         screen.setCursor(1, 50);
-        processPromise(screen.writeString(OledFont, 1, 'Next screen should display orthogonal lines', 15, true), cb);
+        processPromise(screen.writeString(OledFont, 1, 'Next screen should display orthogonal lines', 1, true, true), cb);
     },
     function(cb) {
         setTimeout(function() {
@@ -115,10 +115,10 @@ async.series([
     function(cb) {
         console.log(".....draw diagonal lines");
         screen.clearBuffer();
-        processPromise(screen.drawLine(0, 0, 95, 95, 1), cb);
+        processPromise(screen.drawLine(0, 0, 95, 95, 1, true), cb);
     },
     function(cb) {
-        processPromise(screen.drawLine(0, 95, 95, 0, 1), cb);
+        processPromise(screen.drawLine(0, 95, 95, 0, 1, true), cb);
     },
     function(cb) {
         setTimeout(function() {
