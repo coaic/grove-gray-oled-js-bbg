@@ -482,11 +482,11 @@ Oled.prototype._initialise = function(callback) {
           });                
       },
       function(cb) {
-          me._sendCommand(me.SET_CONTRAST, new Buffer([ 0x53 ]), function(err, results) {  // set contrast
+          me._dimDisplay(false,  function(err, results) {  // set contrast
             if (err)
-              cb(err, "SET_CONTRAST: " + err + " - " + results);
+              cb(err, "_dimDisplay: " + err + " - " + results);
             else
-              cb(err, "SET_CONTRAST: " + results);
+              cb(err, "_dimDisplay: " + results);
           });                   
       },
       function(cb) {
@@ -747,7 +747,8 @@ Oled.prototype._dimDisplay = function(dim, callback) {
   } else {
     contrast = 0xff; // Bright display
   }
-  this._sendCommand(this.SET_CONTRAST, new Buffer([ contrast ]), callback);
+  // this._sendCommand(this.SET_CONTRAST, new Buffer([ contrast ]), callback);
+  this._setContrastLevel(contrast, callback);
 }
 
 Oled.prototype.dimDisplay = function(dim) {
