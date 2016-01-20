@@ -70,22 +70,13 @@ Usage:
 promise = oled.invertDisplay(true|false);
 ```
 
-### turnOffDisplay
-Turns the display off.
+### setEnableDisplay
+Turns the display on or off.
 
 Usage:
 ```javascript
-promise = oled.turnOffDisplay();
+promise = oled.setEnableDisplay(true|false);
 ```
-
-### turnOnDisplay
-Turns the display on.
-
-Usage:
-```javascript
-promise = oled.turnOnDisplay();
-```
-
 
 ### drawPixel
 Draws a pixel at a specified position on the display. This method takes one argument: a multi-dimensional array containing either one or more sets of pixels.

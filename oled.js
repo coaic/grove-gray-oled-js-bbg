@@ -585,6 +585,10 @@ Oled.prototype.writeString = function(font, size, string, color, wrap, sync) {
   return this._toPromise(this._writeString, -1, Array.prototype.slice.call(arguments));
 }
 
+Oled.prototype.setEnableDisplay = function(on) {
+  return this._toPromise(this._setEnableDisplay, -1, Array.prototype.slice.call(arguments));
+}
+
 // write text to the oled screen buffer
 Oled.prototype._writeString = function(font, size, string, color, wrap, sync, callback) {
   var me = this,
@@ -735,7 +739,7 @@ Oled.prototype._update = function(callback) {
 }
 
 // send dim display command to oled
-Oled.prototype.dimDisplay = function(bool) {
+Oled.prototype._dimDisplay = function(bool) {
   var contrast;
 
   if (bool) {
@@ -746,16 +750,6 @@ Oled.prototype.dimDisplay = function(bool) {
 
   this._transfer('cmd', this.SET_CONTRAST);
   this._transfer('cmd', contrast);
-}
-
-// turn oled off
-Oled.prototype.turnOffDisplay = function() {
-  this._transfer('cmd', this.DISPLAY_OFF);
-}
-
-// turn oled on
-Oled.prototype.turnOnDisplay = function() {
-  this._transfer('cmd', this.DISPLAY_ON);
 }
 
 // Clear OLED GRAM and screen buffer

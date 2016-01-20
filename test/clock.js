@@ -121,9 +121,7 @@ async.series([
         processPromise(screen.drawLine(0, 95, 95, 0, 1, true), cb);
     },
     function(cb) {
-        setTimeout(function() {
-            cb(null, "complete");
-            }, 1000);
+        setTimeout(function() { cb(null, "complete"); }, 1000);
     },
     function(cb) {
         console.log(".....draw two overlapping filled rectangles, followed by two non overlapping filled rectangles");
@@ -133,12 +131,23 @@ async.series([
     function(cb) {
         processPromise(screen.fillRect(15, 30, 30, 20, 1, false), cb);
     },
-        function(cb) {
+    function(cb) {
         processPromise(screen.fillRect(60, 30, 20, 25, 1, false), cb);
     },
-        function(cb) {
+    function(cb) {
         processPromise(screen.fillRect(40, 60, 15, 30, 1, true), cb);
-    }    
+    },
+    function(cb) {
+        console.log(".....to OLED display off for 10 seconds");
+        processPromise(screen.setEnableDisplay(false), cb);
+    },
+    function(cb) {
+        setTimeout(function() { cb(null, "complete"); }, 10000);
+    },
+    function(cb) {
+        console.log(".....to OLED display on");
+        processPromise(screen.setEnableDisplay(true), cb);
+    }
     ],
     function(err, results) {
         if (err) {
