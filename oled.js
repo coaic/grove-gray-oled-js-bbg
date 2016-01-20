@@ -183,20 +183,6 @@ Oled.prototype.init = function () {
   return this._toPromise(this._initialise, 100, Array.prototype.slice.call(arguments));
 }
 
-// Oled.prototype.init = function () {
-//   var me = this,
-//       promise = new Promise(function(resolve, reject) {
-//         me._initialise(function(err, results) {
-//           if (err)
-//             reject(new Error("Oled init failed: " + err + "; results: " + results));
-//           else
-//             setTimeout(function() { resolve(results); }, 100);
-//         })
-//       });
-    
-//   return promise;
-// }
-
 Oled.prototype._sendData = function (buffer, bufferLen, callback) {
   var count = 0,
       me = this;
@@ -596,17 +582,6 @@ Oled.prototype.setCursor = function(x, y) {
 }
 
 Oled.prototype.writeString = function(font, size, string, color, wrap, sync) {
-  // var me = this,
-  //   promise = new Promise(function(resolve, reject) {
-  //     me._writeString(font, size, string, color, wrap, sync, function(err, results) {
-  //       if (err)
-  //         reject(new Error("Oled _writeString failed: " + err + "; results: " + results));
-  //       else
-  //         resolve(results);
-  //     })
-  //   });
-    
-  // return promise;
   return this._toPromise(this._writeString, -1, Array.prototype.slice.call(arguments));
 }
 
@@ -871,17 +846,6 @@ Oled.prototype._setRowAndColumn = function(row, col, callback) {
 }
 
 Oled.prototype.drawBitmap = function(pixels, sync) {
-  // var me = this,
-  //   promise = new Promise(function(resolve, reject) {
-  //     me._drawBitmap(pixels, sync, function(err, results) {
-  //       if (err)
-  //         reject(new Error("Oled drawBitmap failed: " + err + "; results: " + results));
-  //       else
-  //         resolve(results);
-  //     });
-  //   });
-
-  // return promise;
   return this._toPromise(this._drawBitmap, -1, Array.prototype.slice.call(arguments));
 }
 
@@ -1073,17 +1037,6 @@ Oled.prototype._updateDirtyBytes = function(byteArray, callback) {
 }
 
 Oled.prototype.drawLine = function(x0, y0, x1, y1, color, sync) {
-  // var me = this,
-  //   promise = new Promise(function(resolve, reject) {
-  //     me._drawLine(x0, y0, x1, y1, color, sync, function(err, results) {
-  //       if (err)
-  //         reject(new Error("Oled _drawLine failed: " + err + "; results: " + results));
-  //       else
-  //         resolve(results);
-  //     })
-  //   });
-    
-  // return promise;
   return this._toPromise(this._drawLine, -1, Array.prototype.slice.call(arguments))
 }
 
@@ -1117,17 +1070,6 @@ Oled.prototype._drawLine = function(x0, y0, x1, y1, color, sync, callback) {
 }
 
 Oled.prototype.fillRect = function(x, y, w, h, color, sync) {
-  // var me = this,
-  //   promise = new Promise(function(resolve, reject) {
-  //     me._fillRect(x, y, w, h, color, sync, function(err, results) {
-  //       if (err)
-  //         reject(new Error("Oled _fillRect failed: " + err + "; results: " + results));
-  //       else
-  //         resolve(results);
-  //     })
-  //   });
-    
-  // return promise;
   return this._toPromise(this._fillRect, -1, Array.prototype.slice.call(arguments));
 }
 
@@ -1136,17 +1078,7 @@ Oled.prototype._fillRect = function(x, y, w, h, color, sync, callback) {
   var me = this,
       i,
       immed = (typeof sync === 'undefined') ? true : sync;
-  // // one iteration for each column of the rectangle
-  // for (var i = x; i < x + w; i += 1) {
-  //   // draws a vert line
-  //   this._drawLine(i, y, i, y+h-1, color, false);
-  // }
-  // if (immed) {
-  //   this._updateDirtyBytes(this.dirtyBytes, callback);
-  // } else {
-  //   setTimeout(function() {callback(null, "success"); }, 0);
-  // }
-  
+
   i = x;
   async.whilst(
     function() { 
