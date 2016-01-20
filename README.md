@@ -3,7 +3,7 @@
 Grove Gray OLED JS Beaglebone Green
 ========================
 
-![oled-seeed](https://goo.gl/X9ROso)
+![oled-seeed](https://camo.githubusercontent.com/327eb3533a61060ef0b001c2b81e3c031e16d61d/687474703a2f2f7777772e736565656473747564696f2e636f6d2f77696b692f696d616765732f392f39302f4f6c6564313238313238312e6a7067)
 
 ## What is this?
 
