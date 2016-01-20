@@ -65,10 +65,17 @@ var Oled = function(opts) {
   this.ACTIVATE_SCROLL = 0x2F;
   this.DEACTIVATE_SCROLL = 0x2E;
   this.SET_VERTICAL_SCROLL_AREA = 0xA3;
-  this.RIGHT_HORIZONTAL_SCROLL = 0x26;
-  this.LEFT_HORIZONTAL_SCROLL = 0x27;
-  this.VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL = 0x29;
-  this.VERTICAL_AND_LEFT_HORIZONTAL_SCROLL = 0x2A;
+  this.RIGHT_HORIZONTAL_SCROLL = 0x27;
+  this.LEFT_HORIZONTAL_SCROLL = 0x26;
+  
+  this.SCROLL_2FRAMES = 0x7;
+  this.SCROLL_3FRAMES = 0x4;
+  this.SCROLL_4FRAMES = 0x5;
+  this.SCROLL_5FRAMES = 0x0;
+  this.SCROLL_25FRAMES = 0x6;
+  this.SCROLL_64FRAMES = 0x1;
+  this.SCROLL_128FRAMES = 0x2;
+  this.SCROLL_256FRAMES = 0x3;
 
   this.cursor_x = 0;
   this.cursor_y = 0;
@@ -217,6 +224,8 @@ Oled.prototype._sendDataByte = function (byte, callback) {
 Oled.prototype._sendCommand = function () {
     var cmd,
         buffer,
+        count,
+        bufferLen,
         callback,
         me = this;
     if (3 == arguments.length) {
@@ -230,6 +239,7 @@ Oled.prototype._sendCommand = function () {
         throw "I2C incorrect number of  argumnents to sendCommand";
     }
 
+//    if (3 == arguments.length && 1 <= buffer.length) {
     if (3 == arguments.length && 1 == buffer.length) {
         this.debugCmdLog("..........cmd: " + cmd.toString(16) + "; cmd: " + buffer[0].toString(16));
         async.series([
@@ -257,6 +267,23 @@ Oled.prototype._sendCommand = function () {
           function(err, results) {
                 callback(err, results);
         });
+      count = 0;
+      // bufferLen = buffer.length;
+      // async.whilst(
+      //   function() { 
+      //     return count < bufferLen 
+      //   },
+      //   function(cb) {
+      //     me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[count], function() { 
+      //       count++;
+      //       cb(null, count);
+      //     });
+      //   },
+      //   function(err, n) {
+      //     callback(err, n);
+      //   }
+      // );
+
     } else if (3 == arguments.length && buffer.length == 2) {
         this.debugCmdLog("..........cmd: " + cmd.toString(16) + "; cmd: " + buffer[0].toString(16) + "; cmd: " + buffer[1].toString(16));
         async.series([
@@ -359,25 +386,6 @@ Oled.prototype._setVerticalMode = function (cb) {
       cb(err, results);
     }
   });
-}
-
-Oled.prototype._setDisplayModeNormal = function (cb) {
-  this._sendCommand(this.NORMAL_DISPLAY, cb);
-}
-
-Oled.prototype.setDisplayModeNormal = function() {
-  var me = this,
-    promise = new Promise(function(resolve, reject) {
-      me._setDisplayModeNormal(function(err, results) {
-        if (err)
-          reject(new Error("Oled setDisplayModeNormal failed: " + err + "; results: " + results));
-        else
-          resolve(results);
-      })
-    });
-    
-  return promise;
-
 }
 
 Oled.prototype._setDisplayModeAllOn = function (cb) {
@@ -547,11 +555,11 @@ Oled.prototype._initialise = function(callback) {
       },
   
       function(cb) {
-          me._setDisplayModeNormal(function(err, results) {  
+          me._invertDisplay(false, function(err, results) {  
             if (err)
-              cb(err, "_setDisplayModeNormal: " + err + " - " + results);
+              cb(err, "_invertDisplay: " + err + " - " + results);
             else
-              cb(err, "_setDisplayModeNormal: " + results);
+              cb(err, "_invertDisplay: " + results);
           });
       },
       function(cb) {
@@ -776,11 +784,11 @@ Oled.prototype.clearDisplay = function(sync) {
             me._sendData(me.buffer, me.buffer.length, cb);
           },
           function(cb) {
-            me._setDisplayModeNormal(function(err, results) {
+            me._invertDisplay(false, function(err, results) {
               if (err)
-                cb(err, "_setDisplayModeNormal: " + err + " - " + results);
+                cb(err, "_invertDisplay: " + err + " - " + results);
               else
-                cb(err, "_setDisplayModeNormal: " + results);
+                cb(err, "_invertDisplay: " + results);
             });
           },
           function(cb) {
@@ -810,12 +818,12 @@ Oled.prototype.clearBuffer = function() {
 }
 
 // invert pixels on oled
-Oled.prototype.invertDisplay = function(bool) {
-  if (bool) {
-    this._transfer('cmd', this.INVERT_DISPLAY); // inverted
-  } else {
-    this._transfer('cmd', this.NORMAL_DISPLAY); // non inverted
-  }
+Oled.prototype._invertDisplay = function(invert, cb) {
+  this._sendCommand(invert ? this.INVERT_DISPLAY : this.NORMAL_DISPLAY, cb);
+}
+
+Oled.prototype.invertDisplay = function(invert) {
+  return this._toPromise(this._invertDisplay, -1, Array.prototype.slice.call(arguments));
 }
 
 Oled.prototype._setRowAndColumn = function(row, col, callback) {
@@ -1102,8 +1110,11 @@ Oled.prototype._fillRect = function(x, y, w, h, color, sync, callback) {
   );
 }
 
+Oled.prototype._startScroll = function(dir, start, stop, cb) {
+  
+}
 // activate scrolling for rows start through stop
-Oled.prototype.startScroll = function(dir, start, stop) {
+Oled.prototype.__startScroll = function(dir, start, stop) {
   var scrollHeader,
       cmdSeq = [];
 
@@ -1148,7 +1159,7 @@ Oled.prototype.startScroll = function(dir, start, stop) {
 }
 
 // stop scrolling display contents
-Oled.prototype.stopScroll = function() {
+Oled.prototype._stopScroll = function() {
   this._transfer('cmd', this.DEACTIVATE_SCROLL); // stahp
 }
 

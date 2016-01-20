@@ -166,6 +166,17 @@ async.series([
     function(cb) {
         console.log(".....undim OLED display");
         processPromise(screen.dimDisplay(false), cb);
+    },
+    function(cb) {
+        console.log(".....invert OLED display for 10 seconds");
+        processPromise(screen.invertDisplay(true), cb);
+    },
+    function(cb) {
+        setTimeout(function() { cb(null, "complete"); }, 10000);
+    },
+    function(cb) {
+        console.log(".....uninvert OLED display");
+        processPromise(screen.invertDisplay(false), cb);
     }
     ],
     function(err, results) {
