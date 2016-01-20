@@ -739,18 +739,21 @@ Oled.prototype._update = function(callback) {
 }
 
 // send dim display command to oled
-Oled.prototype._dimDisplay = function(bool) {
+Oled.prototype._dimDisplay = function(dim, callback) {
   var contrast;
 
-  if (bool) {
+  if (dim) {
     contrast = 0; // Dimmed display
   } else {
-    contrast = 0xCF; // Bright display
+    contrast = 0xff; // Bright display
   }
-
-  this._transfer('cmd', this.SET_CONTRAST);
-  this._transfer('cmd', contrast);
+  this._sendCommand(this.SET_CONTRAST, new Buffer([ contrast ]), callback);
 }
+
+Oled.prototype.dimDisplay = function(dim) {
+  return this._toPromise(this._dimDisplay, -1, Array.prototype.slice.call(arguments));
+}
+
 
 // Clear OLED GRAM and screen buffer
 //

@@ -85,9 +85,17 @@ async.series([
         console.log(".....clear screen");
         processPromise(screen.clearDisplay(true), cb);
     },
+        function(cb) {
+        console.log(".....dim OLED display");
+        processPromise(screen.dimDisplay(true), cb);
+    },
     function(cb) {
         console.log(".....draw bitmap of Seeed logo")
         processPromise(screen.drawBitmap(res.splash, true), cb);
+    },
+        function(cb) {
+        console.log(".....undim OLED display");
+        processPromise(screen.dimDisplay(false), cb);
     },
     function(cb) {
         setTimeout(function() {
@@ -138,15 +146,26 @@ async.series([
         processPromise(screen.fillRect(40, 60, 15, 30, 1, true), cb);
     },
     function(cb) {
-        console.log(".....to OLED display off for 10 seconds");
+        console.log(".....turn OLED display off for 10 seconds");
         processPromise(screen.setEnableDisplay(false), cb);
     },
     function(cb) {
         setTimeout(function() { cb(null, "complete"); }, 10000);
     },
     function(cb) {
-        console.log(".....to OLED display on");
+        console.log(".....turn OLED display on");
         processPromise(screen.setEnableDisplay(true), cb);
+    },
+    function(cb) {
+        console.log(".....dim OLED display for 10 seconds");
+        processPromise(screen.dimDisplay(true), cb);
+    },
+    function(cb) {
+        setTimeout(function() { cb(null, "complete"); }, 10000);
+    },
+    function(cb) {
+        console.log(".....undim OLED display");
+        processPromise(screen.dimDisplay(false), cb);
     }
     ],
     function(err, results) {
