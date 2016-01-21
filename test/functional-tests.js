@@ -98,87 +98,87 @@ async.series([
         console.log(".....undim OLED display");
         processPromise(screen.dimDisplay(false), cb);
     },
-    // function(cb) {
-    //     setTimeout(function() {
-    //         cb(null, "complete");
-    //         }, 1000);
-    // },
-    // function(cb) {
-    //     console.log(".....clear screen");
-    //     processPromise(screen.clearDisplay(true), cb);
-    // },
-    // function(cb) {
-    //     console.log(".....display arbitrary text");
-    //     screen.setCursor(1, 1);
-    //     processPromise(screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 1, true, true), cb);
-    // },
-    // function(cb) {
-    //     screen.setCursor(1, 50);
-    //     processPromise(screen.writeString(OledFont, 1, 'Next screen should display orthogonal lines', 1, true, true), cb);
-    // },
-    // function(cb) {
-    //     setTimeout(function() {
-    //         cb(null, "complete");
-    //         }, 1000);
-    // },
-    // function(cb) {
-    //     console.log(".....draw diagonal lines");
-    //     screen.clearBuffer();
-    //     processPromise(screen.drawLine(0, 0, 95, 95, 1, true), cb);
-    // },
-    // function(cb) {
-    //     processPromise(screen.drawLine(0, 95, 95, 0, 1, true), cb);
-    // },
-    // function(cb) {
-    //     setTimeout(function() { cb(null, "complete"); }, 1000);
-    // },
-    // function(cb) {
-    //     console.log(".....draw two overlapping filled rectangles, followed by two non overlapping filled rectangles");
-    //     screen.clearBuffer();
-    //     processPromise(screen.fillRect(5, 10, 20, 30, 1, false), cb);
-    // },    
-    // function(cb) {
-    //     processPromise(screen.fillRect(15, 30, 30, 20, 1, false), cb);
-    // },
-    // function(cb) {
-    //     processPromise(screen.fillRect(60, 30, 20, 25, 1, false), cb);
-    // },
-    // function(cb) {
-    //     processPromise(screen.fillRect(40, 60, 15, 30, 1, true), cb);
-    // },
-    // function(cb) {
-    //     console.log(".....turn OLED display off for 10 seconds");
-    //     processPromise(screen.setEnableDisplay(false), cb);
-    // },
-    // function(cb) {
-    //     setTimeout(function() { cb(null, "complete"); }, 10000);
-    // },
-    // function(cb) {
-    //     console.log(".....turn OLED display on");
-    //     processPromise(screen.setEnableDisplay(true), cb);
-    // },
-    // function(cb) {
-    //     console.log(".....dim OLED display for 10 seconds");
-    //     processPromise(screen.dimDisplay(true), cb);
-    // },
-    // function(cb) {
-    //     setTimeout(function() { cb(null, "complete"); }, 10000);
-    // },
-    // function(cb) {
-    //     console.log(".....undim OLED display");
-    //     processPromise(screen.dimDisplay(false), cb);
-    // },
-    // function(cb) {
-    //     console.log(".....invert OLED display for 10 seconds");
-    //     processPromise(screen.invertDisplay(true), cb);
-    // },
-    // function(cb) {
-    //     setTimeout(function() { cb(null, "complete"); }, 10000);
-    // },
-    // function(cb) {
-    //     console.log(".....uninvert OLED display");
-    //     processPromise(screen.invertDisplay(false), cb);
-    // },
+    function(cb) {
+        setTimeout(function() {
+            cb(null, "complete");
+            }, 1000);
+    },
+    function(cb) {
+        console.log(".....clear screen");
+        processPromise(screen.clearDisplay(true), cb);
+    },
+    function(cb) {
+        console.log(".....display arbitrary text");
+        screen.setCursor(1, 1);
+        processPromise(screen.writeString(OledFont, 1, 'Cats and dogs are really cool animals, you know.', 1, true, true), cb);
+    },
+    function(cb) {
+        screen.setCursor(1, 50);
+        processPromise(screen.writeString(OledFont, 1, 'Next screen should display orthogonal lines', 1, true, true), cb);
+    },
+    function(cb) {
+        setTimeout(function() {
+            cb(null, "complete");
+            }, 1000);
+    },
+    function(cb) {
+        console.log(".....draw diagonal lines");
+        screen.clearBuffer();
+        processPromise(screen.drawLine(0, 0, 95, 95, 1, true), cb);
+    },
+    function(cb) {
+        processPromise(screen.drawLine(0, 95, 95, 0, 1, true), cb);
+    },
+    function(cb) {
+        setTimeout(function() { cb(null, "complete"); }, 1000);
+    },
+    function(cb) {
+        console.log(".....draw two overlapping filled rectangles, followed by two non overlapping filled rectangles");
+        screen.clearBuffer();
+        processPromise(screen.fillRect(5, 10, 20, 30, 1, false), cb);
+    },    
+    function(cb) {
+        processPromise(screen.fillRect(15, 30, 30, 20, 1, false), cb);
+    },
+    function(cb) {
+        processPromise(screen.fillRect(60, 30, 20, 25, 1, false), cb);
+    },
+    function(cb) {
+        processPromise(screen.fillRect(40, 60, 15, 30, 1, true), cb);
+    },
+    function(cb) {
+        console.log(".....turn OLED display off for 10 seconds");
+        processPromise(screen.setEnableDisplay(false), cb);
+    },
+    function(cb) {
+        setTimeout(function() { cb(null, "complete"); }, 10000);
+    },
+    function(cb) {
+        console.log(".....turn OLED display on");
+        processPromise(screen.setEnableDisplay(true), cb);
+    },
+    function(cb) {
+        console.log(".....dim OLED display for 10 seconds");
+        processPromise(screen.dimDisplay(true), cb);
+    },
+    function(cb) {
+        setTimeout(function() { cb(null, "complete"); }, 10000);
+    },
+    function(cb) {
+        console.log(".....undim OLED display");
+        processPromise(screen.dimDisplay(false), cb);
+    },
+    function(cb) {
+        console.log(".....invert OLED display for 10 seconds");
+        processPromise(screen.invertDisplay(true), cb);
+    },
+    function(cb) {
+        setTimeout(function() { cb(null, "complete"); }, 10000);
+    },
+    function(cb) {
+        console.log(".....uninvert OLED display");
+        processPromise(screen.invertDisplay(false), cb);
+    },
     function(cb) {
         console.log(".....start horizontal scroll right");
         processPromise(screen.startScroll('right', [20, 60], [30, 80]), cb);
