@@ -1043,57 +1043,28 @@ Oled.prototype._fillRect = function(x, y, w, h, color, sync, callback) {
   );
 }
 
-Oled.prototype._startScroll = function(dir, start, stop, cb) {
-  
-}
-// activate scrolling for rows start through stop
-Oled.prototype.__startScroll = function(dir, start, stop) {
-  var scrollHeader,
-      cmdSeq = [];
-
-  switch (dir) {
-    case 'right':
-      cmdSeq.push(this.RIGHT_HORIZONTAL_SCROLL); break;
-    case 'left':
-      cmdSeq.push(this.LEFT_HORIZONTAL_SCROLL); break;
-    // TODO: left diag and right diag not working yet
-    case 'left diagonal':
-      cmdSeq.push(
-        this.SET_VERTICAL_SCROLL_AREA, 0x00,
-        this.VERTICAL_AND_LEFT_HORIZONTAL_SCROLL,
-        this.HEIGHT
-      );
-      break;
-    // TODO: left diag and right diag not working yet
-    case 'right diagonal':
-      cmdSeq.push(
-        this.SET_VERTICAL_SCROLL_AREA, 0x00,
-        this.VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL,
-        this.HEIGHT
-      );
-      break;
-  }
-
-  this._waitUntilReady(function() {
-    cmdSeq.push(
-      0x00, start,
-      0x00, stop,
-      // TODO: these need to change when diagonal
-      0x00, 0xFF,
-      this.ACTIVATE_SCROLL
-    );
-
-    var i, cmdSeqLen = cmdSeq.length;
-
-    for (i = 0; i < cmdSeqLen; i += 1) {
-      this._transfer('cmd', cmdSeq[i]);
-    }
-  }.bind(this));
+Oled.prototype.startScroll = function(dir, rows, columns) {
+  return this._toPromise(this._startScroll, -1, Array.prototype.slice.call(arguments));
 }
 
-// stop scrolling display contents
-Oled.prototype._stopScroll = function() {
-  this._transfer('cmd', this.DEACTIVATE_SCROLL); // stahp
+// Activate scrolling for rows and columns
+//
+Oled.prototype._startScroll = function(dir, rows, columns, callback) {
+  var me = this,
+      scrollDirection = dir == 'right' ? this.RIGHT_HORIZONTAL_SCROLL : this.LEFT_HORIZONTAL_SCROLL,
+      scrollSpeed = me.SCROLL_25FRAMES
+      ;
+  me._sendCommand(new Buffer([ scrollDirection, 0x00, rows[0], scrollSpeed, rows[1], Math.floor(columns[0] / 2) + 8, Math.floor(columns[1] / 2) + 8, 0x00, me.ACTIVATE_SCROLL]), callback);
+}
+
+Oled.prototype.stopScroll = function() {
+  return this._toPromise(this._stopScroll, -1, Array.prototype.slice.call(arguments));
+}
+
+// Stop scrolling display contents
+//
+Oled.prototype._stopScroll = function(callback) {
+  this._sendCommand(this.DEACTIVATE_SCROLL, callback);
 }
 
 module.exports = Oled;
