@@ -115,10 +115,6 @@ var Oled = function(opts) {
     }
   };
 
-  // Setup i2c
-  console.log('this.ADDRESS: ' + "0x" + this.ADDRESS.toString(16));
-  // this.wire = new i2c(this.ADDRESS, {device: '/dev/i2c-0'}); // point to your i2c address, debug provides REPL interface
-
   var screenSize = this.WIDTH + 'x' + this.HEIGHT;
   this.screenConfig = config[screenSize];
 
@@ -135,6 +131,10 @@ Oled.prototype.debugDataLog = function(logLine) {
     console.log(logLine);
   }
 } 
+
+Oled.prototype.formatHexByte = function(byte) {
+  return "0x" + (byte < 0x10 ? "0" : "") + byte.toString(16)
+}
 
 Oled.prototype.debugScreenBufferLog = function(buffer) {
   var i, j,
@@ -210,7 +210,7 @@ Oled.prototype._sendData = function (buffer, bufferLen, callback) {
 }
 
 Oled.prototype._sendDataByte = function (byte, callback) {
-  this.debugDataLog(".................data: " + this.ADDRESS.toString(16) + "; byte: " + byte.toString(16));
+  this.debugDataLog(".................data: " + me.formatHexByte(me.ADDRESS) + "; byte: " + me.formatHexByte(byte));
   this.i2c1.writeByte(this.ADDRESS, this.Data_Mode, byte, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending data byte: error: " + err);
@@ -221,73 +221,81 @@ Oled.prototype._sendDataByte = function (byte, callback) {
         });
 }
 
-Oled.prototype._sendCommand = function () {
-    var cmd,
-        buffer,
+Oled.prototype._sendCommand = function (cmd, callback) {
+    var buffer = cmd,
         count,
         bufferLen,
         callback,
         me = this;
-    if (3 == arguments.length) {
-        cmd = arguments[0];
-        buffer = arguments[1];
-        callback = arguments[2];
-    } else if (2 == arguments.length) {
-        cmd = arguments[0];
-        callback = arguments[1];
-    } else {
-        throw "I2C incorrect number of  argumnents to sendCommand";
-    }
+    // if (3 == arguments.length) {
+    //     cmd = arguments[0];
+    //     buffer = arguments[1];
+    //     callback = arguments[2];
+    // } else if (2 == arguments.length) {
+    //     cmd = arguments[0];
+    //     callback = arguments[1];
+    // } else {
+    //     throw "I2C incorrect number of  argumnents to sendCommand";
+    // }
+    if (typeof callback !== 'function')
+      throw new Error("Second argument must be a call back function");
+    
+    if (typeof cmd !== 'number')
+      if ((typeof cmd !== 'object') && (typeof cmd['parent'] === 'undefined'))
+        throw new Error("First argment must be 'number' or typeof 'object', ie, SlowBuffer");
+    
 
-//    if (3 == arguments.length && 1 <= buffer.length) {
-    if (3 == arguments.length && 1 == buffer.length) {
-        this.debugCmdLog("..........cmd: " + cmd.toString(16) + "; cmd: " + buffer[0].toString(16));
-        async.series([
-          function(cb) {
-            me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          },
-          function(cb) {
-            me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[0], function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + buffer[0] + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          }
-          ], 
-          function(err, results) {
-                callback(err, results);
-        });
+    if (typeof cmd !== 'number') {
+    // if (3 == arguments.length && 1 == buffer.length) {
+    //     async.series([
+    //       function(cb) {
+    //         me.debugCmdLog("..........cmd: " + me.formatHexByte(cmd));
+    //         me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {
+    //           if (err) {
+    //               console.log("I2C Error sending command: " + cmd + ", error: " + err);
+    //               cb(err, "fail");
+    //           } else {
+    //               cb(err, "success");
+    //           }
+    //         });
+    //       },
+    //       function(cb) {
+    //         me.debugCmdLog("..........cmd: " + me.formatHexByte(buffer[0]));
+    //         me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[0], function(err, bytesWritten, buffer) {
+    //           if (err) {
+    //               console.log("I2C Error sending command: " + buffer[0] + ", error: " + err);
+    //               cb(err, "fail");
+    //           } else {
+    //               cb(err, "success");
+    //           }
+    //         });
+    //       }
+    //       ], 
+    //       function(err, results) {
+    //             callback(err, results);
+    //     });
       count = 0;
-      // bufferLen = buffer.length;
-      // async.whilst(
-      //   function() { 
-      //     return count < bufferLen 
-      //   },
-      //   function(cb) {
-      //     me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[count], function() { 
-      //       count++;
-      //       cb(null, count);
-      //     });
-      //   },
-      //   function(err, n) {
-      //     callback(err, n);
-      //   }
-      // );
+      bufferLen = buffer.length;
+      async.whilst(
+        function() { 
+          return count < bufferLen 
+        },
+        function(cb) {
+          me.debugCmdLog("..........cmd: " + me.formatHexByte(buffer[count]));
+          me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[count], function() { 
+            count++;
+            cb(null, count);
+          });
+        },
+        function(err, n) {
+          callback(err, n);
+        }
+      );
 
     } else if (3 == arguments.length && buffer.length == 2) {
-        this.debugCmdLog("..........cmd: " + cmd.toString(16) + "; cmd: " + buffer[0].toString(16) + "; cmd: " + buffer[1].toString(16));
         async.series([
           function(cb) {
+            me.debugCmdLog("..........cmd: " + me.formatHexByte(cmd));
             me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {
               if (err) {
                   console.log("I2C Error sending command: " + cmd + ", error: " + err);
@@ -298,6 +306,7 @@ Oled.prototype._sendCommand = function () {
             });
           },
           function(cb) {
+            me.debugCmdLog("..........cmd: " + me.formatHexByte(buffer[0]));
             me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[0], function(err, bytesWritten, buffer) {
               if (err) {
                   console.log("I2C Error sending command: " + cmd + ", error: " + err);
@@ -308,6 +317,7 @@ Oled.prototype._sendCommand = function () {
             });
           },
           function(cb) {
+            me.debugCmdLog("..........cmd: " + me.formatHexByte(buffer[1]));
             me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[1], function(err, bytesWritten, buffer) {
               if (err) {
                   console.log("I2C Error sending command: " + cmd + ", error: " + err);
@@ -321,8 +331,8 @@ Oled.prototype._sendCommand = function () {
           function(err, results) {
                 callback(err, results);
         });
-    } else if (2 == arguments.length) {
-        this.debugCmdLog("..........cmd: " + cmd.toString(16));
+    } else {
+        me.debugCmdLog("..........cmd: " + me.formatHexByte(cmd));
         me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", error: " + err);
@@ -335,7 +345,7 @@ Oled.prototype._sendCommand = function () {
 }
 
 Oled.prototype._setContrastLevel = function (contrastLevel, cb) {
-  this._sendCommand(this.SET_CONTRAST, new Buffer([ contrastLevel ]), cb);
+  this._sendCommand(new Buffer([ this.SET_CONTRAST, contrastLevel ]), cb);
 }
 
 Oled.prototype._setGrayLevel = function (grayLevel, cb) {
@@ -349,7 +359,7 @@ Oled.prototype._setHorizontalMode = function (callback) {
 
   async.series([
     function(cb) {
-      me._sendCommand(me.SEG_REMAP, new Buffer([ 0x42 ]), function(err, results) {
+      me._sendCommand(new Buffer([ me.SEG_REMAP, 0x42 ]), function(err, results) {
         if (err) {
           console.log("Oled _setHorizontalMode failed: " + err);
           cb(err, results);
@@ -377,7 +387,7 @@ Oled.prototype._setHorizontalMode = function (callback) {
 Oled.prototype._setVerticalMode = function (cb) {
   var me = this;
   
-  me._sendCommand(me.SEG_REMAP, new Buffer([ 0x46 ]), function(err, results) {
+  me._sendCommand(new Buffer([ me.SEG_REMAP, 0x46 ]), function(err, results) {
     if (err) {
       console.log("Oled _setHorizontalMode failed: " + err);
       cb(err, results);
@@ -450,7 +460,7 @@ Oled.prototype._initialise = function(callback) {
           });
       },
       function(cb) {
-          me._sendCommand(me.SET_MULTIPLEX, new Buffer([ me.screenConfig['multiplex'] ]), function(err, results) {  // set multiplex ratio
+          me._sendCommand(new Buffer([ me.SET_MULTIPLEX, me.screenConfig['multiplex'] ]), function(err, results) {  // set multiplex ratio
             if (err)
               cb(err, "SET_MULTIPLEX: " + err + " - " + results);
             else
@@ -458,7 +468,7 @@ Oled.prototype._initialise = function(callback) {
           });         
       },
       function(cb) {
-          me._sendCommand(me.SET_START_LINE, new Buffer([ 0x00 ]), function(err, results) {  // set display start line
+          me._sendCommand(new Buffer([ me.SET_START_LINE, 0x00 ]), function(err, results) {  // set display start line
             if (err)
               cb(err, "SET_START_LINE: " + err + " - " + results);
             else
@@ -466,7 +476,7 @@ Oled.prototype._initialise = function(callback) {
           });                  
       },
       function(cb) {
-          me._sendCommand(me.SET_DISPLAY_OFFSET, new Buffer([ 0x60 ]), function(err, results) {  // set display offset
+          me._sendCommand(new Buffer([ me.SET_DISPLAY_OFFSET, 0x60 ]), function(err, results) {  // set display offset
             if (err)
               cb(err, "SET_DISPLAY_OFFSET: " + err + " - " + results);
             else
@@ -474,7 +484,7 @@ Oled.prototype._initialise = function(callback) {
           });              
       },
       function(cb) {
-          me._setVerticalMode( function(err, results) {  // set remap horizontal mode
+          me._setVerticalMode(function(err, results) {  // set remap horizontal mode
             if (err)
               cb(err, "_setVerticalMode: " + err + " - " + results);
             else
@@ -482,7 +492,7 @@ Oled.prototype._initialise = function(callback) {
           });                      
       },
       function(cb) {
-          me._sendCommand(me.SET_VDD_INTERNAL, new Buffer([ 0x01 ]), function(err, results) {  // set vdd internal
+          me._sendCommand(new Buffer([ me.SET_VDD_INTERNAL, 0x01 ]), function(err, results) {  // set vdd internal
             if (err)
               cb(err, "SET_VDD_INTERNAL: " + err + " - " + results);
             else
@@ -498,7 +508,7 @@ Oled.prototype._initialise = function(callback) {
           });                   
       },
       function(cb) {
-          me._sendCommand(me.SET_PHASE_LENGTH, new Buffer([ 0x51 ]), function(err, results) {  // set phase length
+          me._sendCommand(new Buffer([ me.SET_PHASE_LENGTH, 0x51 ]), function(err, results) {  // set phase length
             if (err)
               cb(err, "SET_PHASE_LENGTH: " + err + " - " + results);
             else
@@ -506,7 +516,7 @@ Oled.prototype._initialise = function(callback) {
           });                
       },
       function(cb) {
-          me._sendCommand(me.SET_DISPLAY_CLOCK_DIVIDE_RATIO, new Buffer([ 0x01 ]), function(err, results) {  // set display clock divide ratio/oscillator frequency
+          me._sendCommand(new Buffer([ me.SET_DISPLAY_CLOCK_DIVIDE_RATIO, 0x01 ]), function(err, results) {  // set display clock divide ratio/oscillator frequency
             if (err)
               cb(err, "SET_DISPLAY_CLOCK_DIVIDE_RATIO: " + err + " - " + results);
             else
@@ -522,7 +532,7 @@ Oled.prototype._initialise = function(callback) {
           });                          
       },
       function(cb) {
-          me._sendCommand(me.SET_PRECHARGE_VOLTAGE, new Buffer([ me.VCOMH ]), function(err, results) {  // set pre charge voltage to VCOMH
+          me._sendCommand(new Buffer([ me.SET_PRECHARGE_VOLTAGE, me.VCOMH ]), function(err, results) {  // set pre charge voltage to VCOMH
             if (err)
               cb(err, "SET_PRECHARGE_VOLTAGE: " + err + " - " + results);
             else
@@ -530,7 +540,7 @@ Oled.prototype._initialise = function(callback) {
           });          
       },
       function(cb) {
-          me._sendCommand(me.SET_VCOMH, new Buffer([ me.POINT_86_VCC ]), function(err, results) {  // set VCOMh .86 x Vcc
+          me._sendCommand(new Buffer([ me.SET_VCOMH, me.POINT_86_VCC ]), function(err, results) {  // set VCOMh .86 x Vcc
             if (err)
               cb(err, "SET_VCOMH: " + err + " - " + results);
             else
@@ -538,7 +548,7 @@ Oled.prototype._initialise = function(callback) {
           });                
       },
       function(cb) {
-          me._sendCommand(me.SET_SECOND_PRECHARGE, new Buffer([ 0x01 ]), function(err, results) {  // set second pre charge period
+          me._sendCommand(new Buffer([ me.SET_SECOND_PRECHARGE, 0x01 ]), function(err, results) {  // set second pre charge period
             if (err)
               cb(err, "SET_SECOND_PRECHARGE: " + err + " - " + results);
             else
@@ -546,7 +556,7 @@ Oled.prototype._initialise = function(callback) {
           });            
       },
       function(cb) {
-          me._sendCommand(me.SET_ENABLE_SECOND_PRECHARGE, new Buffer([ me.INTERNAL_VSL ]), function(err, results) {  // enable second pre charge and internal VSL
+          me._sendCommand(new Buffer([ me.SET_ENABLE_SECOND_PRECHARGE, me.INTERNAL_VSL ]), function(err, results) {  // enable second pre charge and internal VSL
             if (err)
               cb(err, "SET_ENABLE_SECOND_PRECHARGE: " + err + " - " + results);
             else
@@ -579,6 +589,7 @@ Oled.prototype._initialise = function(callback) {
           });
       }
   ], function(err, results) {
+        console.log('Oled I2C Address: ' + me.formatHexByte(me.ADDRESS));
         callback(err, results);
   });
 }
@@ -755,7 +766,6 @@ Oled.prototype._dimDisplay = function(dim, callback) {
   } else {
     contrast = 0xff; // Bright display
   }
-  // this._sendCommand(this.SET_CONTRAST, new Buffer([ contrast ]), callback);
   this._setContrastLevel(contrast, callback);
 }
 
@@ -831,7 +841,7 @@ Oled.prototype._setRowAndColumn = function(row, col, callback) {
   
   async.series([
       function(cb) {
-        me._sendCommand(me.ROW_ADDR, new Buffer(row), function(err, results) {  // set start and end row address
+        me._sendCommand(new Buffer([me.ROW_ADDR, row[0], row[1]]), function(err, results) {  // set start and end row address
           if (err)
             cb(err, "ROW_ADDR: " + err + " - " + results);
           else
@@ -839,7 +849,7 @@ Oled.prototype._setRowAndColumn = function(row, col, callback) {
         });            
       },
       function(cb) {
-        me._sendCommand(me.COLUMN_ADDR, new Buffer(col), function(err, results) {  // set start and end column address
+        me._sendCommand(new Buffer([me.COLUMN_ADDR, col[0], col[1]]), function(err, results) {  // set start and end column address
           if (err)
             cb(err, "COLUMN_ADDR: " + err + " - " + results);
           else
