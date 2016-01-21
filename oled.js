@@ -227,16 +227,7 @@ Oled.prototype._sendCommand = function (cmd, callback) {
         bufferLen,
         callback,
         me = this;
-    // if (3 == arguments.length) {
-    //     cmd = arguments[0];
-    //     buffer = arguments[1];
-    //     callback = arguments[2];
-    // } else if (2 == arguments.length) {
-    //     cmd = arguments[0];
-    //     callback = arguments[1];
-    // } else {
-    //     throw "I2C incorrect number of  argumnents to sendCommand";
-    // }
+
     if (typeof callback !== 'function')
       throw new Error("Second argument must be a call back function");
     
@@ -246,34 +237,6 @@ Oled.prototype._sendCommand = function (cmd, callback) {
     
 
     if (typeof cmd !== 'number') {
-    // if (3 == arguments.length && 1 == buffer.length) {
-    //     async.series([
-    //       function(cb) {
-    //         me.debugCmdLog("..........cmd: " + me.formatHexByte(cmd));
-    //         me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {
-    //           if (err) {
-    //               console.log("I2C Error sending command: " + cmd + ", error: " + err);
-    //               cb(err, "fail");
-    //           } else {
-    //               cb(err, "success");
-    //           }
-    //         });
-    //       },
-    //       function(cb) {
-    //         me.debugCmdLog("..........cmd: " + me.formatHexByte(buffer[0]));
-    //         me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[0], function(err, bytesWritten, buffer) {
-    //           if (err) {
-    //               console.log("I2C Error sending command: " + buffer[0] + ", error: " + err);
-    //               cb(err, "fail");
-    //           } else {
-    //               cb(err, "success");
-    //           }
-    //         });
-    //       }
-    //       ], 
-    //       function(err, results) {
-    //             callback(err, results);
-    //     });
       count = 0;
       bufferLen = buffer.length;
       async.whilst(
@@ -291,46 +254,6 @@ Oled.prototype._sendCommand = function (cmd, callback) {
           callback(err, n);
         }
       );
-
-    } else if (3 == arguments.length && buffer.length == 2) {
-        async.series([
-          function(cb) {
-            me.debugCmdLog("..........cmd: " + me.formatHexByte(cmd));
-            me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          },
-          function(cb) {
-            me.debugCmdLog("..........cmd: " + me.formatHexByte(buffer[0]));
-            me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[0], function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          },
-          function(cb) {
-            me.debugCmdLog("..........cmd: " + me.formatHexByte(buffer[1]));
-            me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[1], function(err, bytesWritten, buffer) {
-              if (err) {
-                  console.log("I2C Error sending command: " + cmd + ", error: " + err);
-                  cb(err, "fail");
-              } else {
-                  cb(err, "success");
-              }
-            });
-          }
-          ],
-          function(err, results) {
-                callback(err, results);
-        });
     } else {
         me.debugCmdLog("..........cmd: " + me.formatHexByte(cmd));
         me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {

@@ -27,6 +27,7 @@ Date.prototype.format = function(fmt) { //author: meizz
 var screen = new OLED({
     width: 96,
     height: 96,
+    address: 0x3C,
     // canvas: res.splash,
     fps: 0
     });
