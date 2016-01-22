@@ -680,6 +680,10 @@ Oled.prototype._update = function(callback) {
   });
 }
 
+Oled.prototype.update = function() {
+  return this._toPromise(this._update, -1, Array.prototype.slice.call(arguments));
+}
+
 // send dim display command to oled
 Oled.prototype._dimDisplay = function(dim, callback) {
   var contrast;

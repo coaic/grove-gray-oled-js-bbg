@@ -158,8 +158,7 @@ npm install png-to-lcd
 var pngtolcd = require('png-to-lcd');
 
 pngtolcd('nyan-cat.png', true, function(err, bitmap) {
-  oled.buffer = bitmap;
-  oled.update();
+  oled.drawBitmap(bitmap, false).then(oled.update());
 });
 ```
 
@@ -167,13 +166,13 @@ pngtolcd('nyan-cat.png', true, function(err, bitmap) {
 Scrolls the current display either left or right.
 Arguments:
 + string **direction** - direction of scrolling. 'left' or 'right'
-+ int **start** - starting row of scrolling area
-+ int **stop** - end row of scrolling area
++ [int, int] **row** - start row and stop row of scrolling area
++ [int, int] **column** - start column and stop column of scrolling area
 
 Usage:
 ```javascript
 // args: (direction, start, stop)
-oled.startscroll('left', 0, 15); // this will scroll an entire 128 x 32 screen
+oled.startscroll('left', [20, 60], [30, 80]); // this will scroll an area of 40 pixels by 50 pixels
 ```
 
 ### stopScroll
@@ -181,7 +180,7 @@ Stops all current scrolling behaviour.
 
 Usage:
 ```javascript
-oled.stopscroll();
+promise = oled.stopScroll();
 ```
 
 ### setCursor
@@ -206,7 +205,7 @@ Arguments:
 + int **color** - color of text. Can be specified as either 0 for 'off' or black, and 1 or 255 for 'on' or white.
 + bool **wrapping** - true applies word wrapping at the screen limit, false for no wrapping. If a long string without spaces is supplied as the text, just letter wrapping will apply instead.
 
-Optional bool as last argument specifies whether screen updates immediately with result. Default is true.
+Bool as last argument specifies whether screen updates immediately with result.
 
 Before all of this text can happen, you need to load a font buffer for use. A good font to start with is NodeJS package [oled-font-5x7](https://www.npmjs.org/package/oled-font-5x7).
 
