@@ -648,7 +648,6 @@ Oled.prototype._update = function(callback) {
 
   me.debugScreenBufferLog(me.buffer);
 
-  var p = me._horizontalModeRowAndColumn(0);
   async.series([
       function(cb) {
         me._setHorizontalMode(function(err, results) {
