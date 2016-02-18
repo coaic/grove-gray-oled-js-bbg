@@ -2,7 +2,7 @@
 //
 // Use Arduino CPP code as a model per: https://github.com/Seeed-Studio/OLED_Display_96X96
 //
-var i2c = require('i2c-bus'),
+var i2cLib = require('i2c-bus'),
     async = require('async'),
     Promise = require('promise');
 
@@ -16,6 +16,7 @@ var Oled = function(opts) {
   this.BUS0 = 0;
   this.BUS1 = 1;
   this.BUS2 = 2;
+  this.CURRENT_BUS = this.BUS1 || opts.bus;
 
   this.VERTICAL_MODE = 0;
   this.HORIZONTAL_MODE = 1;
@@ -23,7 +24,7 @@ var Oled = function(opts) {
   this.grayH = 0xF0;
   this.grayL = 0x0F;
 
-  this.i2c1,
+  this.i2c,
   this.Command_Mode = 0x80;
   this.Data_Mode = 0x40;
   this.VideoRAMSize = Math.floor(this.WIDTH / 2) * this.HEIGHT;
@@ -191,27 +192,28 @@ Oled.prototype.init = function () {
 }
 
 Oled.prototype._sendData = function (buffer, bufferLen, callback) {
-  var count = 0,
-      me = this;
+    var count = 0,
+        me = this;
 
-  async.whilst(
-    function() {
-      return count < bufferLen
-    },
-    function(cb) {
-      me.i2c1.writeByte(me.ADDRESS, me.Data_Mode, buffer[count], function() {
-        count++;
-        cb(null, count);
+    async.whilst(
+      function() {
+        return count < bufferLen
+      },
+      function(cb) {
+        var tmpBuffer = buffer.slice(count,bufferLen);;
+        me.i2c.writeI2cBlock(me.ADDRESS,me.Data_Mode,(bufferLen - count > 32 ? 32 : bufferLen - count),tmpBuffer, function(err, bytesWritten, buffer){
+          count += bytesWritten;
+          cb(null,count);
+        });
+      },
+      function(err, n) {
+        callback(err, n);
       });
-    },
-    function(err, n) {
-      callback(err, n);
-    });
 }
 
 Oled.prototype._sendDataByte = function (byte, callback) {
   this.debugDataLog(".................data: " + this.formatHexByte(this.ADDRESS) + "; byte: " + this.formatHexByte(byte));
-  this.i2c1.writeByte(this.ADDRESS, this.Data_Mode, byte, function(err, bytesWritten, buffer) {
+  this.i2c.writeByte(this.ADDRESS, this.Data_Mode, byte, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending data byte: error: " + err);
                 callback(err, "fail");
@@ -245,7 +247,7 @@ Oled.prototype._sendCommand = function (cmd, callback) {
         },
         function(cb) {
           me.debugCmdLog("..........cmd: " + me.formatHexByte(buffer[count]));
-          me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, buffer[count], function() {
+          me.i2c.writeByte(me.ADDRESS, me.Command_Mode, buffer[count], function() {
             count++;
             cb(null, count);
           });
@@ -256,7 +258,7 @@ Oled.prototype._sendCommand = function (cmd, callback) {
       );
     } else {
         me.debugCmdLog("..........cmd: " + me.formatHexByte(cmd));
-        me.i2c1.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {
+        me.i2c.writeByte(me.ADDRESS, me.Command_Mode, cmd, function(err, bytesWritten, buffer) {
             if (err) {
                 console.log("I2C Error sending command: " + cmd + ", error: " + err);
                 callback(err, "fail");
@@ -351,7 +353,7 @@ Oled.prototype._initialise = function(callback) {
   var me = this;
     async.series([
       function(cb) {
-          me.i2c1 = i2c.open(me.BUS1, function(err, results) {
+          me.i2c = i2cLib.open(me.BUS2, function(err, results) {
             if (err)
               cb(err, "open fail: " + err + " - " + results);
             else
@@ -646,6 +648,7 @@ Oled.prototype._update = function(callback) {
 
   me.debugScreenBufferLog(me.buffer);
 
+  var p = me._horizontalModeRowAndColumn(0);
   async.series([
       function(cb) {
         me._setHorizontalMode(function(err, results) {
@@ -705,6 +708,7 @@ Oled.prototype.dimDisplay = function(dim) {
 //
 Oled.prototype.clearDisplay = function(sync) {
   var me = this,
+  immed = (typeof sync === 'undefined') ? true : sync,
     promise = new Promise(function(resolve, reject) {
       async.series([
           function(cb) {
@@ -718,7 +722,11 @@ Oled.prototype.clearDisplay = function(sync) {
           function(cb) {
             // Write zeroes to Graffics RAM and clear display buffer
             me.buffer.fill(0x00);
-            me._sendData(me.buffer, me.buffer.length, cb);
+            if(immed){
+              me._update(cb);
+            } else {
+              setTimeout(cb,0);
+            }
           },
           function(cb) {
             me._invertDisplay(false, function(err, results) {
