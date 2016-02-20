@@ -514,7 +514,7 @@ Oled.prototype._initialise = function(callback) {
           });
       }
   ], function(err, results) {
-        console.log('Oled I2C Address: ' + me.formatHexByte(me.ADDRESS));
+        this.debugDataLog('Oled I2C Address: ' + me.formatHexByte(me.ADDRESS));
         callback(err, results);
   });
 }
